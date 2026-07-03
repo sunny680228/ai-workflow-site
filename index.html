@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>教學 × 數位 × 實踐力｜用 AI 打造高效工作流｜陳佳釧老師</title>
+  <style>
+    :root {
+      --ink: #34313a;
+      --muted: #6f6873;
+      --paper: #f7f3ee;
+      --surface: #fffdf8;
+      --lavender: #aaa2c5;
+      --lavender-deep: #756a96;
+      --sage: #aeb8a5;
+      --blue: #9fb2bf;
+      --rose: #d8afa9;
+      --clay: #c5aa98;
+      --line: rgba(52, 49, 58, .14);
+      --shadow: 0 18px 40px rgba(52, 49, 58, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(170, 162, 197, .23), transparent 28%),
+        linear-gradient(315deg, rgba(174, 184, 165, .25), transparent 30%),
+        var(--paper);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+      font-size: 24px;
+      line-height: 1.65;
+    }
+
+    .site-shell {
+      width: min(1180px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 34px 0 48px;
+    }
+
+    header {
+      display: grid;
+      gap: 14px;
+      padding: 28px;
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, .86);
+      box-shadow: var(--shadow);
+      border-radius: 8px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 24px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 22px 2px 16px;
+      scrollbar-color: var(--lavender-deep) transparent;
+    }
+
+    .tab-button {
+      flex: 0 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 18px;
+      color: var(--ink);
+      background: var(--surface);
+      font: inherit;
+      font-size: 22px;
+      line-height: 1.2;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(52, 49, 58, .08);
+      transition: transform .18s ease, background-color .18s ease, color .18s ease;
+    }
+
+    .tab-button:hover,
+    .tab-button:focus-visible {
+      transform: translateY(-2px);
+      outline: 3px solid rgba(159, 178, 191, .45);
+      outline-offset: 2px;
+    }
+
+    .tab-button[aria-selected="true"] {
+      color: #ffffff;
+      background: var(--lavender-deep);
+      border-color: var(--lavender-deep);
+    }
+
+    main {
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255, 253, 248, .92);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel {
+      display: none;
+      padding: 28px;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    .panel-head {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .focus-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .focus-item {
+      min-height: 132px;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(174, 184, 165, .22);
+    }
+
+    .focus-item:nth-child(2n) {
+      background: rgba(159, 178, 191, .22);
+    }
+
+    .focus-item:nth-child(3n) {
+      background: rgba(216, 175, 169, .22);
+    }
+
+    .focus-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 24px;
+    }
+
+    .slide-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    figure {
+      margin: 0;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
+
+    figure.wide {
+      grid-column: 1 / -1;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid rgba(52, 49, 58, .08);
+    }
+
+    figcaption {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.45;
+    }
+
+    .callout {
+      margin-top: 22px;
+      padding: 18px 20px;
+      border-radius: 8px;
+      border-left: 8px solid var(--rose);
+      background: rgba(216, 175, 169, .18);
+    }
+
+    .link-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin: 0 0 22px;
+    }
+
+    .link-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 76px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(117, 106, 150, .28);
+      color: #ffffff;
+      background: var(--lavender-deep);
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: center;
+      text-decoration: none;
+      box-shadow: 0 10px 20px rgba(52, 49, 58, .12);
+      transition: transform .18s ease, background-color .18s ease;
+    }
+
+    .link-button:nth-child(2) {
+      background: #8c9d83;
+      border-color: rgba(140, 157, 131, .32);
+    }
+
+    .link-button:hover,
+    .link-button:focus-visible {
+      transform: translateY(-2px);
+      outline: 3px solid rgba(159, 178, 191, .45);
+      outline-offset: 2px;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 20px;
+      text-align: center;
+    }
+
+    @media (max-width: 820px) {
+      body,
+      p,
+      .subtitle,
+      .focus-item strong {
+        font-size: 24px;
+      }
+
+      .site-shell {
+        width: min(100% - 24px, 1180px);
+        padding-top: 18px;
+      }
+
+      header,
+      .panel {
+        padding: 20px;
+      }
+
+      .focus-grid,
+      .slide-grid,
+      .link-actions {
+        grid-template-columns: 1fr;
+      }
+
+      figure.wide {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="site-shell">
+    <header>
+      <h1>教學 × 數位 × 實踐力：用 AI 打造你的高效工作流｜陳佳釧老師</h1>
+      <p class="subtitle">從資訊轟炸到可執行流程，把 Gemini、NotebookLM 與 GEM 變成備課、教學、評量的省力夥伴。</p>
+    </header>
+
+    <nav class="tabs" role="tablist" aria-label="教學網站分頁">
+      <button class="tab-button" id="tab-intro" role="tab" aria-selected="true" aria-controls="panel-intro">課程首頁</button>
+      <button class="tab-button" id="tab-why" role="tab" aria-selected="false" aria-controls="panel-why">先建立工作流</button>
+      <button class="tab-button" id="tab-cycle" role="tab" aria-selected="false" aria-controls="panel-cycle">備教評流程</button>
+      <button class="tab-button" id="tab-gemini" role="tab" aria-selected="false" aria-controls="panel-gemini">Gemini 備課</button>
+      <button class="tab-button" id="tab-notebook" role="tab" aria-selected="false" aria-controls="panel-notebook">NotebookLM</button>
+      <button class="tab-button" id="tab-gem" role="tab" aria-selected="false" aria-controls="panel-gem">GEM 小幫手</button>
+      <button class="tab-button" id="tab-judge" role="tab" aria-selected="false" aria-controls="panel-judge">AI 判斷力</button>
+      <button class="tab-button" id="tab-close" role="tab" aria-selected="false" aria-controls="panel-close">結語</button>
+    </nav>
+
+    <main>
+      <section class="panel active" id="panel-intro" role="tabpanel" aria-labelledby="tab-intro">
+        <div class="panel-head">
+          <h2>課程首頁</h2>
+          <p>這個網站保留原投影片脈絡，適合直播、研習或課後複習使用。每個分頁都是一段可直接講解的教學節點。</p>
+        </div>
+        <div class="slide-grid">
+          <figure class="wide">
+            <img src="assets/投影片1.JPG" alt="用 AI 打造你的高效工作流封面">
+            <figcaption>課程主題與講師資訊。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片2.JPG" alt="資訊轟炸示意">
+            <figcaption>從資訊量爆炸談起，聚焦「如何轉成自己的教學方法」。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片3.JPG" alt="我一定要學這麼多嗎">
+            <figcaption>用問題意識開場，帶出工作流的重要性。</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-why" role="tabpanel" aria-labelledby="tab-why">
+        <div class="panel-head">
+          <h2>與其追逐工具，不如建立自己的工作流</h2>
+          <p>AI 工具更新很快，但老師真正需要的是一套能反覆使用、能貼近班級現場的流程。</p>
+        </div>
+        <div class="focus-grid">
+          <div class="focus-item"><strong>先定義任務</strong>把「我要做什麼」說清楚，比先找工具更省時間。</div>
+          <div class="focus-item"><strong>再選擇工具</strong>讓 Gemini、NotebookLM、GEM 各自負責最適合的工作。</div>
+          <div class="focus-item"><strong>最後修成自己的版本</strong>AI 產出只是草稿，老師的判斷才是品質關鍵。</div>
+        </div>
+        <div class="slide-grid" style="margin-top: 22px;">
+          <figure>
+            <img src="assets/投影片4.JPG" alt="建立自己的工作流">
+            <figcaption>從工具焦慮轉向流程思維。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片7.JPG" alt="人機協作">
+            <figcaption>AI 不取代教師，而是協助教師放大專業。</figcaption>
+          </figure>
+          <figure class="wide">
+            <img src="assets/投影片8.JPG" alt="初心加創意，AI 算力帶來無限可能性">
+            <figcaption>保留初心與創意，讓工具補上速度與變化。</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-cycle" role="tabpanel" aria-labelledby="tab-cycle">
+        <div class="panel-head">
+          <h2>備、教、評：把 AI 放進教學節奏</h2>
+          <p>把 AI 用在課前、課中、課後，才不會變成零散工具箱，而是能真正減省時間的教學支援系統。</p>
+        </div>
+        <div class="slide-grid">
+          <figure>
+            <img src="assets/投影片5.JPG" alt="備教評流程">
+            <figcaption>課前設計內容與提問，課中搭配工具設計教材，課後結合評量與回饋。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片6.JPG" alt="Gemini AI 語文備課工作流">
+            <figcaption>找重點、問問題、篩材料、做教材、修精準，形成語文備課流程。</figcaption>
+          </figure>
+        </div>
+        <div class="callout">講解時可以請老師選一課課文，現場套用「找、問、篩、做、修」，把抽象工具變成可帶走的操作步驟。</div>
+      </section>
+
+      <section class="panel" id="panel-gemini" role="tabpanel" aria-labelledby="tab-gemini">
+        <div class="panel-head">
+          <h2>Gemini：創意靈感與流程起點</h2>
+          <p>Gemini 適合用來發想、轉換、整理初稿，也能與筆記本串聯，把過去對話變成後續備課素材。</p>
+        </div>
+        <div class="slide-grid">
+          <figure>
+            <img src="assets/投影片9.JPG" alt="高效備課黃金三角">
+            <figcaption>Gemini 是創意靈感師，適合跨界轉化與創意聯想。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片12.JPG" alt="Gemini 加筆記本">
+            <figcaption>過去聊天記錄可以成為 NotebookLM 來源，讓好點子不散落。</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-notebook" role="tabpanel" aria-labelledby="tab-notebook">
+        <div class="panel-head">
+          <h2>NotebookLM：把資料變成教材素材庫</h2>
+          <p>NotebookLM 適合精準挖掘、統整來源、轉出學習單、簡報、測驗或報告，特別適合需要依據文本備課的語文教學。</p>
+        </div>
+        <div class="slide-grid">
+          <figure>
+            <img src="assets/投影片10.JPG" alt="NotebookLM 操作畫面">
+            <figcaption>上傳課本習作與相關資料，輸入需求後轉成各種素材。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片11.JPG" alt="NotebookLM 小撇步">
+            <figcaption>把滿意的對話存成記事，也可以把 GEM 技能或備完的課變成新來源。</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-gem" role="tabpanel" aria-labelledby="tab-gem">
+        <div class="panel-head">
+          <h2>GEM：把常用任務做成專屬小幫手</h2>
+          <p>重複性的備課、出題、改寫與摘要任務，可以透過 GEM 標準化，讓老師少重複輸入，多保留時間做判斷。</p>
+        </div>
+        <div class="link-actions" aria-label="GEM 小幫手連結">
+          <a class="link-button" href="https://52hal.cc/SUNNYiiwcn" target="_blank" rel="noopener noreferrer">佳釧老師的備課小幫手</a>
+          <a class="link-button" href="https://52hal.cc/SUNNY8etdg" target="_blank" rel="noopener noreferrer">佳釧老師的出題小幫手</a>
+        </div>
+        <div class="slide-grid">
+          <figure>
+            <img src="assets/投影片13.JPG" alt="GEM 管理工具">
+            <figcaption>建立自己的機器人，累積可反覆使用的教學流程。</figcaption>
+          </figure>
+          <figure>
+            <img src="assets/投影片14.JPG" alt="新增 GEM 設定">
+            <figcaption>命名、說明、任務指令與預設工具，是設計 GEM 的四個核心欄位。</figcaption>
+          </figure>
+          <figure class="wide">
+            <img src="assets/投影片15.JPG" alt="GEM 小撇步">
+            <figcaption>先在 Gemini 中重新撰寫指令，再用 NotebookLM 訓練，最後補上相關資料來源。</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-judge" role="tabpanel" aria-labelledby="tab-judge">
+        <div class="panel-head">
+          <h2>AI 判斷力：重要工作要與 AI 攜手</h2>
+          <p>AI 最適合處理重複性、生成多版本、整理資料；但高價值互動、情感支持與教學決策，仍需要老師親自掌握。</p>
+        </div>
+        <div class="slide-grid">
+          <figure class="wide">
+            <img src="assets/投影片16.JPG" alt="AI 使用四象限">
+            <figcaption>用「重要與否」和「是否與 AI 攜手」判斷任務安排，避免把精力浪費在低價值工作。</figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="panel" id="panel-close" role="tabpanel" aria-labelledby="tab-close">
+        <div class="panel-head">
+          <h2>結語：AI 可以快，但喜悅來自親手解決問題</h2>
+          <p>AI 能在幾秒內提供一百種解法，但它無法取代教師理解學生、設計互動、親手解決問題後的成就感。</p>
+        </div>
+        <div class="slide-grid">
+          <figure class="wide">
+            <img src="assets/投影片17.JPG" alt="AI 無法取代親手解決問題後的喜悅感">
+            <figcaption>把 AI 當成加速器，而不是方向盤；真正的教學價值仍由老師決定。</figcaption>
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <p class="footer-note">預覽版，尚未發佈；待核准後再進行上線。</p>
+  </div>
+
+  <script>
+    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+    const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+
+    function activateTab(tab) {
+      tabs.forEach((item) => {
+        item.setAttribute('aria-selected', String(item === tab));
+      });
+
+      panels.forEach((panel) => {
+        panel.classList.toggle('active', panel.id === tab.getAttribute('aria-controls'));
+      });
+    }
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => activateTab(tab));
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        let nextIndex = index;
+        if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+        if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === 'Home') nextIndex = 0;
+        if (event.key === 'End') nextIndex = tabs.length - 1;
+        tabs[nextIndex].focus();
+        activateTab(tabs[nextIndex]);
+      });
+    });
+  </script>
+</body>
+</html>
