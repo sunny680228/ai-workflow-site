@@ -38,7 +38,7 @@ const firebaseConfig = {
 
 ## 4. 設定教學用規則
 
-這個留言牆支援匿名留言，所以課堂使用時需要允許公開讀寫。請到 Firestore 的「規則」貼上：
+這個留言牆支援匿名留言，所以課堂使用時需要允許公開讀寫。便利貼會跟白板一起存在 `sunny-discussion-wall-boards` 這個集合中。請到 Firestore 的「規則」貼上：
 
 ```js
 rules_version = '2';
@@ -47,10 +47,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /sunny-discussion-wall-boards/{boardId} {
       allow read, create, update, delete: if true;
-
-      match /notes/{noteId} {
-        allow read, create, update, delete: if true;
-      }
     }
   }
 }
