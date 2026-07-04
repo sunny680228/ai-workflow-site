@@ -787,6 +787,7 @@
         <section class="panel-section">
           <h2 class="panel-title">儲存</h2>
           <p class="status-line" id="saveStatus"></p>
+          <p class="status-line" id="cloudStatus">雲端同步：檢查中</p>
         </section>
       </aside>
     </div>
@@ -795,10 +796,21 @@
   <button class="fab" id="addButton" type="button" aria-label="新增便利貼">+</button>
   <input class="hidden-file" id="imageInput" type="file" accept="image/*">
 
-  <script>
+  <script type="module">
     const storageKey = 'sunny-discussion-wall-v2';
+    const cloudCollectionName = 'sunny-discussion-wall-boards';
     const colors = ['butter', 'rose', 'sage', 'blue', 'lavender'];
     const reactionTypes = ['👍', '❤️', '💡', '🙂'];
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCie23RbiqN4anO9_YU4bGsZrZrNK0WO7g',
+      authDomain: 'project-8911415156641689223.firebaseapp.com',
+      projectId: 'project-8911415156641689223',
+      storageBucket: 'project-8911415156641689223.firebasestorage.app',
+      messagingSenderId: '318237753931',
+      appId: '1:318237753931:web:4cf7501602ddad2670c3ce',
+      measurementId: 'G-SSCLY0ZZNR'
+    };
 
     const boardEl = document.getElementById('board');
     const canvasEl = document.getElementById('canvas');
@@ -809,6 +821,7 @@
     const boardListEl = document.getElementById('boardList');
     const boardStatsEl = document.getElementById('boardStats');
     const saveStatusEl = document.getElementById('saveStatus');
+    const cloudStatusEl = document.getElementById('cloudStatus');
     const imageInput = document.getElementById('imageInput');
     const timerMinutes = document.getElementById('timerMinutes');
     const timerPanel = document.querySelector('.timer');
@@ -826,6 +839,16 @@
     let timerRemainingSeconds = 180;
     let timerId = null;
     let lastBeepSecond = null;
+    let firebaseApp = null;
+    let firestoreDb = null;
+    let firestoreTools = null;
+    let unsubscribeBoards = null;
+    let unsubscribeNotes = null;
+    let applyingCloudSnapshot = false;
+    let cloudReady = false;
+    const cloudNoteTimers = new Map();
+    let cloudBoardTimer = null;
+    let pendingCloudRenderTimer = null;
 
     function makeId(prefix) {
       return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -912,6 +935,25 @@
       };
     }
 
+    function hasFirebaseConfig() {
+      return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
+    }
+
+    function setCloudStatus(message) {
+      cloudStatusEl.textContent = `雲端同步：${message}`;
+    }
+
+    function isEditingNote() {
+      return Boolean(document.activeElement && document.activeElement.closest('.note'));
+    }
+
+    function renderWhenEditingStops() {
+      clearTimeout(pendingCloudRenderTimer);
+      pendingCloudRenderTimer = setTimeout(() => {
+        if (!isEditingNote()) render();
+      }, 900);
+    }
+
     function loadState() {
       try {
         const parsed = JSON.parse(localStorage.getItem(storageKey));
@@ -931,10 +973,221 @@
       if (board) board.updatedAt = Date.now();
       localStorage.setItem(storageKey, JSON.stringify(state));
       saveStatusEl.textContent = `本機已儲存：${nowText()}`;
+      queueCloudBoardSave(board);
+    }
+
+    function saveNote(note) {
+      saveState();
+      queueCloudNoteSave(note);
     }
 
     function currentBoard() {
       return state.boards.find((board) => board.id === currentBoardId) || state.boards[0];
+    }
+
+    function boardPayload(board) {
+      return {
+        id: board.id,
+        title: board.title,
+        archived: Boolean(board.archived),
+        createdAt: board.createdAt || Date.now(),
+        updatedAt: board.updatedAt || Date.now()
+      };
+    }
+
+    function notePayload(note) {
+      return {
+        id: note.id,
+        x: Number(note.x) || 0,
+        y: Number(note.y) || 0,
+        width: Number(note.width) || 300,
+        height: Number(note.height) || 174,
+        color: note.color || 'butter',
+        text: note.text || '',
+        author: note.author || '匿名',
+        pinned: Boolean(note.pinned),
+        createdAt: note.createdAt || Date.now(),
+        reactions: note.reactions || {},
+        attachments: note.attachments || []
+      };
+    }
+
+    function mergeBoardFromCloud(boardData) {
+      const existing = state.boards.find((board) => board.id === boardData.id);
+      if (existing) {
+        Object.assign(existing, boardData, { notes: existing.notes || [] });
+        return existing;
+      }
+      const board = { ...boardData, notes: [] };
+      state.boards.push(board);
+      return board;
+    }
+
+    function queueCloudBoardSave(board) {
+      if (!cloudReady || applyingCloudSnapshot || !board) return;
+      clearTimeout(cloudBoardTimer);
+      cloudBoardTimer = setTimeout(() => upsertCloudBoard(board), 250);
+    }
+
+    function queueCloudNoteSave(note) {
+      const board = currentBoard();
+      if (!cloudReady || applyingCloudSnapshot || !board || !note) return;
+      clearTimeout(cloudNoteTimers.get(note.id));
+      const timer = setTimeout(() => {
+        upsertCloudNote(board.id, note);
+        cloudNoteTimers.delete(note.id);
+      }, 350);
+      cloudNoteTimers.set(note.id, timer);
+    }
+
+    async function upsertCloudBoard(board) {
+      if (!cloudReady || !board) return;
+      try {
+        const { doc, setDoc } = firestoreTools;
+        await setDoc(doc(firestoreDb, cloudCollectionName, board.id), boardPayload(board), { merge: true });
+        setCloudStatus(`已同步 ${nowText()}`);
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('同步失敗，先保留本機資料');
+      }
+    }
+
+    async function upsertCloudNote(boardId, note) {
+      if (!cloudReady || !boardId || !note) return;
+      try {
+        const { doc, setDoc } = firestoreTools;
+        await setDoc(
+          doc(firestoreDb, cloudCollectionName, boardId, 'notes', note.id),
+          notePayload(note),
+          { merge: true }
+        );
+        await upsertCloudBoard(currentBoard());
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('便利貼同步失敗，先保留本機資料');
+      }
+    }
+
+    async function deleteCloudNote(boardId, noteId) {
+      if (!cloudReady || !boardId || !noteId) return;
+      try {
+        const { doc, deleteDoc } = firestoreTools;
+        await deleteDoc(doc(firestoreDb, cloudCollectionName, boardId, 'notes', noteId));
+        await upsertCloudBoard(currentBoard());
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('刪除便利貼尚未同步');
+      }
+    }
+
+    async function deleteCloudBoard(boardId) {
+      if (!cloudReady || !boardId) return;
+      try {
+        const { doc, deleteDoc } = firestoreTools;
+        const boardToDelete = state.boards.find((board) => board.id === boardId);
+        const noteDeletes = (boardToDelete?.notes || []).map((note) => {
+          return deleteDoc(doc(firestoreDb, cloudCollectionName, boardId, 'notes', note.id));
+        });
+        await Promise.all(noteDeletes);
+        await deleteDoc(doc(firestoreDb, cloudCollectionName, boardId));
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('刪除白板尚未同步');
+      }
+    }
+
+    async function initFirebaseSync() {
+      if (!hasFirebaseConfig()) {
+        setCloudStatus('尚未設定 Firebase，目前為本機模式');
+        return;
+      }
+
+      try {
+        const appModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
+        const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
+        firebaseApp = appModule.initializeApp(firebaseConfig);
+        firestoreDb = firestoreModule.getFirestore(firebaseApp);
+        firestoreTools = firestoreModule;
+        cloudReady = true;
+        setCloudStatus('連線中');
+        listenCloudBoards();
+        await upsertCloudBoard(currentBoard());
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('無法連線，先使用本機模式');
+      }
+    }
+
+    function listenCloudBoards() {
+      if (!cloudReady) return;
+      const { collection, onSnapshot, orderBy, query } = firestoreTools;
+      if (unsubscribeBoards) unsubscribeBoards();
+      unsubscribeBoards = onSnapshot(
+        query(collection(firestoreDb, cloudCollectionName), orderBy('updatedAt', 'desc')),
+        (snapshot) => {
+          applyingCloudSnapshot = true;
+          const cloudBoards = snapshot.docs.map((docSnap) => docSnap.data()).filter((board) => board.id);
+          const localBoardsById = new Map(state.boards.map((board) => [board.id, board]));
+
+          cloudBoards.forEach((boardData) => {
+            const local = localBoardsById.get(boardData.id);
+            mergeBoardFromCloud({
+              ...boardData,
+              notes: local?.notes || []
+            });
+          });
+
+          if (!state.boards.some((board) => board.id === currentBoardId)) {
+            currentBoardId = state.boards[0]?.id || cloudBoards[0]?.id;
+            state.currentBoardId = currentBoardId;
+          }
+
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          applyingCloudSnapshot = false;
+          if (isEditingNote()) {
+            renderBoardList();
+            listenCurrentBoardNotes();
+            renderWhenEditingStops();
+            setCloudStatus(`已連線 ${nowText()}`);
+            return;
+          }
+          render();
+          listenCurrentBoardNotes();
+          setCloudStatus(`已連線 ${nowText()}`);
+        },
+        (error) => {
+          console.warn(error);
+          setCloudStatus('讀取白板失敗，請檢查 Firestore 規則');
+        }
+      );
+    }
+
+    function listenCurrentBoardNotes() {
+      if (!cloudReady || !currentBoardId) return;
+      const { collection, onSnapshot, orderBy, query } = firestoreTools;
+      if (unsubscribeNotes) unsubscribeNotes();
+      unsubscribeNotes = onSnapshot(
+        query(collection(firestoreDb, cloudCollectionName, currentBoardId, 'notes'), orderBy('createdAt', 'asc')),
+        (snapshot) => {
+          const board = currentBoard();
+          if (!board) return;
+          applyingCloudSnapshot = true;
+          board.notes = snapshot.docs.map((docSnap) => notePayload(docSnap.data()));
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          applyingCloudSnapshot = false;
+          if (isEditingNote()) {
+            renderWhenEditingStops();
+            setCloudStatus(`已同步 ${nowText()}`);
+            return;
+          }
+          render();
+          setCloudStatus(`已同步 ${nowText()}`);
+        },
+        (error) => {
+          console.warn(error);
+          setCloudStatus('讀取便利貼失敗，請檢查 Firestore 規則');
+        }
+      );
     }
 
     function boardPointFromEvent(event) {
@@ -964,6 +1217,7 @@
       board.notes.push(note);
       selectedNoteId = note.id;
       saveState();
+      upsertCloudNote(board.id, note);
       render();
       focusNote(note.id);
       return note;
@@ -1009,6 +1263,7 @@
             state.currentBoardId = board.id;
             saveState();
             render();
+            listenCurrentBoardNotes();
           });
 
           const remove = document.createElement('button');
@@ -1024,6 +1279,7 @@
     }
 
     function deleteBoard(boardId) {
+      deleteCloudBoard(boardId);
       if (state.boards.length <= 1) {
         const fresh = defaultBoard();
         state.boards = [fresh];
@@ -1093,25 +1349,26 @@
       const textarea = noteEl.querySelector('textarea');
       textarea.addEventListener('input', () => {
         note.text = textarea.value;
-        saveState();
+        saveNote(note);
       });
 
       const author = noteEl.querySelector('.author-input');
       author.addEventListener('input', () => {
         note.author = author.value.trim() || '匿名';
-        saveState();
+        saveNote(note);
       });
 
       noteEl.querySelector('[data-action="delete"]').addEventListener('click', () => {
         const board = currentBoard();
         board.notes = board.notes.filter((item) => item.id !== note.id);
         saveState();
+        deleteCloudNote(board.id, note.id);
         render();
       });
 
       noteEl.querySelector('[data-action="pin"]').addEventListener('click', () => {
         note.pinned = !note.pinned;
-        saveState();
+        saveNote(note);
         render();
       });
 
@@ -1127,7 +1384,7 @@
         if (!url) return;
         const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
         note.attachments.push({ type: 'link', url: normalized, label: normalized.replace(/^https?:\/\//i, '') });
-        saveState();
+        saveNote(note);
         render();
       });
 
@@ -1140,7 +1397,7 @@
         button.addEventListener('click', () => {
           const reaction = button.dataset.reaction;
           note.reactions[reaction] = (note.reactions[reaction] || 0) + 1;
-          saveState();
+          saveNote(note);
           render();
         });
       });
@@ -1148,7 +1405,7 @@
       const resizeObserver = new ResizeObserver(() => {
         note.width = Math.round(noteEl.offsetWidth);
         note.height = Math.round(noteEl.offsetHeight);
-        saveState();
+        saveNote(note);
       });
       resizeObserver.observe(noteEl);
 
@@ -1180,7 +1437,7 @@
         noteEl.releasePointerCapture(event.pointerId);
         noteEl.dataset.dragging = 'false';
         noteEl.style.cursor = 'grab';
-        saveState();
+        saveNote(note);
       });
     }
 
@@ -1192,7 +1449,7 @@
       const note = noteById(noteId);
       if (!note) return;
       note.attachments.push(attachment);
-      saveState();
+      saveNote(note);
       render();
     }
 
@@ -1322,6 +1579,7 @@
     render();
     saveState();
     setTimerFromInput();
+    initFirebaseSync();
   </script>
 </body>
 </html>
