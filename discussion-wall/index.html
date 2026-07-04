@@ -1016,7 +1016,7 @@
 
     function saveNote(note) {
       saveState();
-      queueCloudNoteSave(note);
+      queueCloudBoardSave(currentBoard());
     }
 
     function currentBoard() {
@@ -1169,6 +1169,10 @@
       if (!cloudReady) return;
       const { collection, onSnapshot, orderBy, query } = firestoreTools;
       if (unsubscribeBoards) unsubscribeBoards();
+      if (boardIdFromUrl()) {
+        listenCloudBoardDocument(currentBoardId);
+        return;
+      }
       unsubscribeBoards = onSnapshot(
         query(collection(firestoreDb, cloudCollectionName), orderBy('updatedAt', 'desc')),
         (snapshot) => {
@@ -1208,6 +1212,38 @@
           }
           render();
           setCloudStatus(`已連線 ${nowText()}`);
+        },
+        (error) => {
+          console.warn(error);
+          setCloudStatus('讀取白板失敗，請檢查 Firestore 規則');
+        }
+      );
+    }
+
+    function listenCloudBoardDocument(boardId) {
+      if (!cloudReady || !boardId) return;
+      const { doc, onSnapshot } = firestoreTools;
+      if (unsubscribeNotes) unsubscribeNotes();
+      unsubscribeNotes = onSnapshot(
+        doc(firestoreDb, cloudCollectionName, boardId),
+        (snapshot) => {
+          if (!snapshot.exists()) {
+            setCloudStatus('已連線');
+            return;
+          }
+          if (isEditingNote()) {
+            renderWhenEditingStops();
+            setCloudStatus(`已同步 ${nowText()}`);
+            return;
+          }
+          applyingCloudSnapshot = true;
+          const board = mergeBoardFromCloud({ id: boardId, ...snapshot.data() });
+          currentBoardId = board.id;
+          state.currentBoardId = board.id;
+          localStorage.setItem(storageKey, JSON.stringify(state));
+          applyingCloudSnapshot = false;
+          render();
+          setCloudStatus(`已同步 ${nowText()}`);
         },
         (error) => {
           console.warn(error);
