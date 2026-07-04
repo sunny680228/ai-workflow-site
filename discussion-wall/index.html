@@ -798,19 +798,10 @@
 
   <script type="module">
     const storageKey = 'sunny-discussion-wall-v2';
-    const cloudCollectionName = 'sunny-discussion-wall-boards';
+    const cloudApiBase = '/api/boards';
+    const cloudPollMs = 2500;
     const colors = ['butter', 'rose', 'sage', 'blue', 'lavender'];
     const reactionTypes = ['👍', '❤️', '💡', '🙂'];
-
-    const firebaseConfig = {
-      apiKey: 'AIzaSyCie23RbiqN4anO9_YU4bGsZrZrNK0WO7g',
-      authDomain: 'project-8911415156641689223.firebaseapp.com',
-      projectId: 'project-8911415156641689223',
-      storageBucket: 'project-8911415156641689223.firebasestorage.app',
-      messagingSenderId: '318237753931',
-      appId: '1:318237753931:web:4cf7501602ddad2670c3ce',
-      measurementId: 'G-SSCLY0ZZNR'
-    };
 
     const boardEl = document.getElementById('board');
     const canvasEl = document.getElementById('canvas');
@@ -839,11 +830,8 @@
     let timerRemainingSeconds = 180;
     let timerId = null;
     let lastBeepSecond = null;
-    let firebaseApp = null;
-    let firestoreDb = null;
-    let firestoreTools = null;
-    let unsubscribeBoards = null;
-    let unsubscribeNotes = null;
+    let cloudPollTimer = null;
+    let cloudKnownUpdate = 0;
     let applyingCloudSnapshot = false;
     let cloudReady = false;
     const cloudNoteTimers = new Map();
@@ -948,10 +936,6 @@
       const url = new URL(window.location.href);
       url.searchParams.set('board', boardId);
       window.history.replaceState({}, '', url);
-    }
-
-    function hasFirebaseConfig() {
-      return Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
     }
 
     function setCloudStatus(message) {
@@ -1097,159 +1081,139 @@
       cloudNoteTimers.set(note.id, timer);
     }
 
+    async function apiRequest(path = '', options = {}) {
+      const response = await withTimeout(fetch(`${cloudApiBase}${path}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        },
+        ...options
+      }), 'Vercel API 連線逾時', 10000);
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(text || `Vercel API ${response.status}`);
+      }
+      return response.status === 204 ? null : response.json();
+    }
+
     async function upsertCloudBoard(board) {
       if (!cloudReady || !board) return;
       try {
-        const { doc, setDoc } = firestoreTools;
         setCloudStatus('寫入中');
-        await withTimeout(
-          setDoc(doc(firestoreDb, cloudCollectionName, board.id), boardPayload(board), { merge: true }),
-          'Firestore 寫入逾時'
-        );
+        await apiRequest(`?id=${encodeURIComponent(board.id)}`, {
+          method: 'PUT',
+          body: JSON.stringify(boardPayload(board))
+        });
+        cloudKnownUpdate = board.updatedAt || Date.now();
         setCloudStatus(`已同步 ${nowText()}`);
       } catch (error) {
         console.warn(error);
-        setCloudStatus('同步失敗，請檢查 Firestore 規則');
+        setCloudStatus('同步失敗，請檢查 Vercel 資料庫');
       }
     }
 
     async function upsertCloudNote(boardId, note) {
       if (!cloudReady || !boardId || !note) return;
-      try {
-        await upsertCloudBoard(currentBoard());
-      } catch (error) {
-        console.warn(error);
-        setCloudStatus('便利貼同步失敗，先保留本機資料');
-      }
+      await upsertCloudBoard(currentBoard());
     }
 
     async function deleteCloudNote(boardId, noteId) {
       if (!cloudReady || !boardId || !noteId) return;
-      try {
-        await upsertCloudBoard(currentBoard());
-      } catch (error) {
-        console.warn(error);
-        setCloudStatus('刪除便利貼尚未同步');
-      }
+      await upsertCloudBoard(currentBoard());
     }
 
     async function deleteCloudBoard(boardId) {
       if (!cloudReady || !boardId) return;
       try {
-        const { doc, deleteDoc } = firestoreTools;
-        await deleteDoc(doc(firestoreDb, cloudCollectionName, boardId));
+        await apiRequest(`?id=${encodeURIComponent(boardId)}`, { method: 'DELETE' });
+        setCloudStatus(`已同步 ${nowText()}`);
       } catch (error) {
         console.warn(error);
         setCloudStatus('刪除白板尚未同步');
       }
     }
 
-    async function initFirebaseSync() {
-      if (!hasFirebaseConfig()) {
-        setCloudStatus('尚未設定 Firebase，目前為本機模式');
-        return;
-      }
-
-      try {
-        const appModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js');
-        const firestoreModule = await import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js');
-        firebaseApp = appModule.initializeApp(firebaseConfig);
-        firestoreDb = firestoreModule.getFirestore(firebaseApp);
-        firestoreTools = firestoreModule;
-        cloudReady = true;
-        setCloudStatus('連線中');
-        listenCloudBoards();
-      } catch (error) {
-        console.warn(error);
-        setCloudStatus('無法連線，先使用本機模式');
-      }
+    async function initCloudSync() {
+      cloudReady = true;
+      setCloudStatus('連線中');
+      await listenCloudBoards();
     }
 
-    function listenCloudBoards() {
+    async function listenCloudBoards() {
       if (!cloudReady) return;
-      const { collection, onSnapshot, orderBy, query } = firestoreTools;
-      if (unsubscribeBoards) unsubscribeBoards();
-      if (boardIdFromUrl()) {
-        listenCloudBoardDocument(currentBoardId);
+      clearInterval(cloudPollTimer);
+      const urlBoardId = boardIdFromUrl();
+      if (urlBoardId) {
+        await pullCloudBoard(urlBoardId);
+        cloudPollTimer = setInterval(() => pullCloudBoard(urlBoardId), cloudPollMs);
         return;
       }
-      unsubscribeBoards = onSnapshot(
-        query(collection(firestoreDb, cloudCollectionName), orderBy('updatedAt', 'desc')),
-        (snapshot) => {
-          applyingCloudSnapshot = true;
-          const cloudBoards = snapshot.docs.map((docSnap) => docSnap.data()).filter((board) => board.id);
-          const localBoardsById = new Map(state.boards.map((board) => [board.id, board]));
-          const urlBoardId = boardIdFromUrl();
-          const current = currentBoard();
-          const currentIsEmptyLocalBoard = current && !urlBoardId && current.notes.length === 0 && !cloudBoards.some((board) => board.id === current.id);
 
-          cloudBoards.forEach((boardData) => {
-            const local = localBoardsById.get(boardData.id);
-            mergeBoardFromCloud({
-              ...boardData,
-              notes: local?.notes || []
-            });
-          });
+      await pullCloudBoardList();
+      cloudPollTimer = setInterval(() => {
+        if (boardIdFromUrl()) {
+          clearInterval(cloudPollTimer);
+          listenCloudBoards();
+          return;
+        }
+        pullCloudBoardList();
+      }, cloudPollMs);
+    }
 
-          if (urlBoardId && state.boards.some((board) => board.id === urlBoardId)) {
-            currentBoardId = urlBoardId;
-          } else if (currentIsEmptyLocalBoard && cloudBoards[0]?.id) {
-            currentBoardId = cloudBoards[0].id;
-          } else if (!state.boards.some((board) => board.id === currentBoardId)) {
-            currentBoardId = cloudBoards[0]?.id || state.boards[0]?.id;
-            state.currentBoardId = currentBoardId;
-          }
+    async function pullCloudBoardList() {
+      try {
+        const result = await apiRequest('');
+        const cloudBoards = Array.isArray(result?.boards) ? result.boards : [];
+        const current = currentBoard();
+        const currentIsEmptyLocalBoard = current && current.notes.length === 0 && !cloudBoards.some((board) => board.id === current.id);
 
+        cloudBoards.forEach((boardData) => mergeBoardFromCloud(boardData));
+        if (currentIsEmptyLocalBoard && cloudBoards[0]?.id) {
+          currentBoardId = cloudBoards[0].id;
           state.currentBoardId = currentBoardId;
           setBoardIdInUrl(currentBoardId);
-          localStorage.setItem(storageKey, JSON.stringify(state));
-          applyingCloudSnapshot = false;
-          if (isEditingNote()) {
-            renderBoardList();
-            renderWhenEditingStops();
-            setCloudStatus(`已連線 ${nowText()}`);
-            return;
-          }
-          render();
-          setCloudStatus(`已連線 ${nowText()}`);
-        },
-        (error) => {
-          console.warn(error);
-          setCloudStatus('讀取白板失敗，請檢查 Firestore 規則');
         }
-      );
+
+        localStorage.setItem(storageKey, JSON.stringify(state));
+        if (isEditingNote()) {
+          renderBoardList();
+          renderWhenEditingStops();
+        } else {
+          render();
+        }
+        setCloudStatus(`已連線 ${nowText()}`);
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('讀取白板失敗，請檢查 Vercel 資料庫');
+      }
     }
 
-    function listenCloudBoardDocument(boardId) {
-      if (!cloudReady || !boardId) return;
-      const { doc, onSnapshot } = firestoreTools;
-      if (unsubscribeNotes) unsubscribeNotes();
-      unsubscribeNotes = onSnapshot(
-        doc(firestoreDb, cloudCollectionName, boardId),
-        (snapshot) => {
-          if (!snapshot.exists()) {
-            setCloudStatus('已連線');
-            return;
-          }
-          if (isEditingNote()) {
-            renderWhenEditingStops();
-            setCloudStatus(`已同步 ${nowText()}`);
-            return;
-          }
-          applyingCloudSnapshot = true;
-          const board = mergeBoardFromCloud({ id: boardId, ...snapshot.data() });
-          currentBoardId = board.id;
-          state.currentBoardId = board.id;
-          localStorage.setItem(storageKey, JSON.stringify(state));
-          applyingCloudSnapshot = false;
-          render();
-          setCloudStatus(`已同步 ${nowText()}`);
-        },
-        (error) => {
-          console.warn(error);
-          setCloudStatus('讀取白板失敗，請檢查 Firestore 規則');
+    async function pullCloudBoard(boardId) {
+      if (!boardId || isEditingNote()) return;
+      try {
+        const result = await apiRequest(`?id=${encodeURIComponent(boardId)}`);
+        if (!result?.board) {
+          setCloudStatus('已連線');
+          return;
         }
-      );
+        if ((result.board.updatedAt || 0) <= cloudKnownUpdate && currentBoard()?.notes?.length) {
+          setCloudStatus(`已同步 ${nowText()}`);
+          return;
+        }
+        applyingCloudSnapshot = true;
+        const board = mergeBoardFromCloud(result.board);
+        currentBoardId = board.id;
+        state.currentBoardId = board.id;
+        cloudKnownUpdate = board.updatedAt || 0;
+        localStorage.setItem(storageKey, JSON.stringify(state));
+        applyingCloudSnapshot = false;
+        render();
+        setCloudStatus(`已同步 ${nowText()}`);
+      } catch (error) {
+        console.warn(error);
+        setCloudStatus('讀取白板失敗，請檢查 Vercel 資料庫');
+      }
     }
 
     function listenCurrentBoardNotes() {}
@@ -1647,7 +1611,7 @@
     render();
     saveState();
     setTimerFromInput();
-    initFirebaseSync();
+    initCloudSync();
   </script>
 </body>
 </html>
