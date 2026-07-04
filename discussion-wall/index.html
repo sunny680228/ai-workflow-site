@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>大聲說出來—互動討論牆，陳佳釧老師設計</title>
+  <style>
+    :root {
+      --ink: #34313a;
+      --muted: #6f6873;
+      --paper: #f5f0ea;
+      --surface: #fffdf8;
+      --lavender: #a9a1c5;
+      --lavender-deep: #756a96;
+      --sage: #aeb7a4;
+      --sage-deep: #788a70;
+      --blue: #9fb1bd;
+      --rose: #d8afa9;
+      --clay: #c7ac98;
+      --butter: #e7d79d;
+      --line: rgba(52, 49, 58, .16);
+      --shadow: 0 16px 36px rgba(52, 49, 58, .13);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(135deg, rgba(169, 161, 197, .24), transparent 32%),
+        linear-gradient(315deg, rgba(174, 183, 164, .24), transparent 34%),
+        var(--paper);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+      font-size: 24px;
+      line-height: 1.45;
+      overflow: hidden;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 18px;
+      align-items: center;
+      padding: 14px 22px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 253, 248, .92);
+      box-shadow: 0 8px 22px rgba(52, 49, 58, .08);
+      z-index: 10;
+    }
+
+    .avatar {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 4px solid rgba(170, 162, 197, .45);
+      background: #ffffff;
+      box-shadow: 0 8px 18px rgba(52, 49, 58, .12);
+    }
+
+    .brand {
+      position: relative;
+      min-width: 0;
+      padding: 4px 18px 2px 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+
+    .hand-title {
+      position: relative;
+      display: inline-block;
+      flex-wrap: wrap;
+      align-items: baseline;
+      padding: 6px 10px 10px;
+      color: #e8897e;
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+      font-weight: 900;
+      letter-spacing: 0;
+      -webkit-text-stroke: 1.4px #252229;
+      text-shadow:
+        2px 2px 0 #252229,
+        3px 3px 0 rgba(52, 49, 58, .16),
+        -1px -1px 0 #fffaf4,
+        0 2px 0 rgba(255, 255, 255, .72);
+      transform: rotate(-1deg);
+    }
+
+    .hand-title::before {
+      content: "✧  ⌒  ☆   ♡";
+      position: absolute;
+      top: -14px;
+      left: 10px;
+      right: 0;
+      color: #252229;
+      font-size: 16px;
+      font-weight: 800;
+      -webkit-text-stroke: 0;
+      text-shadow: none;
+      opacity: .95;
+      transform: rotate(1deg);
+      pointer-events: none;
+    }
+
+    .hand-title::after {
+      content: "";
+      position: absolute;
+      left: 8px;
+      right: 12px;
+      bottom: 2px;
+      border-bottom: 2px dashed rgba(232, 137, 126, .55);
+      transform: rotate(.4deg);
+      pointer-events: none;
+    }
+
+    .brand::after {
+      content: "✿";
+      position: absolute;
+      right: 0;
+      top: 4px;
+      color: #252229;
+      font-size: 18px;
+      transform: rotate(18deg);
+      opacity: .82;
+      pointer-events: none;
+    }
+
+    .drawn-dash {
+      position: relative;
+      display: inline-block;
+      width: 58px;
+      height: 14px;
+      margin: 0 6px;
+      transform: translateY(-5px) rotate(-2deg);
+    }
+
+    .drawn-dash::before,
+    .drawn-dash::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 6px;
+      border-radius: 999px;
+      background: #aaa2c5;
+      border: 1px solid rgba(37, 34, 41, .18);
+    }
+
+    .drawn-dash::before {
+      top: 5px;
+      transform: rotate(.8deg);
+    }
+
+    .drawn-dash::after {
+      top: 9px;
+      opacity: .35;
+      transform: rotate(-1.2deg);
+    }
+
+    .designer {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 20px;
+      line-height: 1.25;
+    }
+
+    .board-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .timer {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 46px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 8px 18px rgba(52, 49, 58, .06);
+    }
+
+    .timer-display {
+      min-width: 64px;
+      font-size: 24px;
+      font-weight: 800;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-display.danger {
+      color: #b8202f;
+    }
+
+    .timer.expanded {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: grid;
+      grid-template-columns: 1fr;
+      place-content: center;
+      gap: 16px;
+      border: 0;
+      border-radius: 0;
+      background: rgba(245, 240, 234, .82);
+      backdrop-filter: blur(4px);
+      cursor: zoom-out;
+    }
+
+    .timer.expanded .timer-display {
+      min-width: 0;
+      color: rgba(52, 49, 58, .62);
+      font-size: clamp(96px, 22vw, 260px);
+      line-height: 1;
+      text-shadow: 0 12px 34px rgba(52, 49, 58, .12);
+    }
+
+    .timer.expanded .timer-display.danger {
+      color: rgba(184, 32, 47, .82);
+    }
+
+    .timer.expanded .timer-input,
+    .timer.expanded .timer-button {
+      justify-self: center;
+    }
+
+    .timer-input {
+      width: 58px;
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px 6px;
+      background: rgba(255, 253, 248, .8);
+      font-size: 16px;
+    }
+
+    .timer-button {
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 4px 8px;
+      color: var(--ink);
+      background: rgba(255, 253, 248, .72);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .field,
+    .button,
+    .tool-button,
+    .fab,
+    .reaction-button,
+    .note-tool,
+    .delete-board {
+      min-height: 48px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: var(--surface);
+    }
+
+    .field {
+      width: min(38vw, 360px);
+      padding: 8px 12px;
+    }
+
+    .button,
+    .tool-button,
+    .reaction-button,
+    .note-tool,
+    .delete-board {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(52, 49, 58, .08);
+      transition: transform .16s ease, background-color .16s ease, color .16s ease;
+    }
+
+    .button:hover,
+    .button:focus-visible,
+    .tool-button:hover,
+    .tool-button:focus-visible,
+    .reaction-button:hover,
+    .reaction-button:focus-visible,
+    .note-tool:hover,
+    .note-tool:focus-visible,
+    .delete-board:hover,
+    .delete-board:focus-visible,
+    .fab:hover,
+    .fab:focus-visible {
+      transform: translateY(-2px);
+      outline: 3px solid rgba(159, 177, 189, .42);
+      outline-offset: 2px;
+    }
+
+    .button.primary,
+    .tool-button.active,
+    .fab {
+      color: #ffffff;
+      background: var(--lavender-deep);
+      border-color: var(--lavender-deep);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      min-height: 0;
+    }
+
+    .toolbar,
+    .sidepanel {
+      border-right: 1px solid var(--line);
+      background: rgba(255, 253, 248, .78);
+      backdrop-filter: blur(10px);
+      z-index: 5;
+    }
+
+    .toolbar {
+      display: grid;
+      align-content: start;
+      gap: 12px;
+      padding: 16px 12px;
+    }
+
+    .tool-button {
+      flex-direction: column;
+      min-height: 82px;
+      padding: 10px 8px;
+      font-size: 18px;
+      line-height: 1.15;
+      touch-action: none;
+    }
+
+    .tool-icon {
+      display: block;
+      font-size: 30px;
+      line-height: 1;
+    }
+
+    .board {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+      background:
+        radial-gradient(circle at 1px 1px, rgba(52, 49, 58, .14) 1px, transparent 0) 0 0 / 28px 28px,
+        rgba(255, 253, 248, .38);
+    }
+
+    .board::before,
+    .board::after {
+      content: "";
+      position: absolute;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .board::before {
+      top: 34px;
+      right: 44px;
+      width: 96px;
+      height: 74px;
+      border-radius: 46% 54% 50% 50%;
+      background:
+        radial-gradient(circle at 24px 26px, #34313a 0 4px, transparent 5px),
+        radial-gradient(circle at 58px 26px, #34313a 0 4px, transparent 5px),
+        radial-gradient(circle at 42px 46px, rgba(52, 49, 58, .75) 0 5px, transparent 6px),
+        var(--rose);
+      opacity: .65;
+      transform: rotate(5deg);
+    }
+
+    .board::after {
+      left: 44px;
+      bottom: 44px;
+      width: 110px;
+      height: 78px;
+      border-radius: 14px 14px 26px 26px;
+      background:
+        linear-gradient(90deg, transparent 16px, rgba(255, 253, 248, .65) 16px 24px, transparent 24px),
+        var(--sage);
+      opacity: .52;
+      transform: rotate(-6deg);
+    }
+
+    .board-canvas {
+      position: relative;
+      z-index: 2;
+      width: 2200px;
+      height: 1400px;
+      min-width: 100%;
+      min-height: 100%;
+    }
+
+    .note {
+      position: absolute;
+      width: 288px;
+      min-height: 174px;
+      padding: 14px;
+      border: 1px solid rgba(52, 49, 58, .14);
+      border-radius: 8px;
+      background: #efe5c4;
+      box-shadow: var(--shadow);
+      cursor: grab;
+      resize: both;
+      overflow: hidden;
+    }
+
+    .note:hover,
+    .note:focus-within {
+      overflow: auto;
+    }
+
+    .note[data-color="rose"] {
+      background: #ead1ce;
+    }
+
+    .note[data-color="sage"] {
+      background: #dce3d5;
+    }
+
+    .note[data-color="blue"] {
+      background: #d7e1e7;
+    }
+
+    .note[data-color="lavender"] {
+      background: #dfdbea;
+    }
+
+    .note.pinned {
+      z-index: 8;
+      cursor: default;
+      box-shadow: 0 18px 38px rgba(117, 106, 150, .24);
+    }
+
+    .note.pinned::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #b66d75;
+      box-shadow: inset 0 -3px 0 rgba(52, 49, 58, .16);
+      transform: translateX(-50%);
+    }
+
+    .note:focus-within {
+      outline: 3px solid rgba(117, 106, 150, .35);
+      outline-offset: 3px;
+    }
+
+    .note-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .author {
+      min-width: 0;
+      color: var(--muted);
+      font-size: 18px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .author-input {
+      min-width: 0;
+      border: 0;
+      border-bottom: 2px dashed rgba(52, 49, 58, .18);
+      color: var(--muted);
+      background: transparent;
+      font-size: 18px;
+      outline: 0;
+    }
+
+    .icon-button {
+      width: 28px;
+      height: 28px;
+      border: 1px solid rgba(52, 49, 58, .14);
+      border-radius: 50%;
+      color: var(--ink);
+      background: rgba(255, 253, 248, .55);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .pin-button {
+      min-width: 28px;
+      padding: 0;
+    }
+
+    .note textarea {
+      display: block;
+      width: 100%;
+      min-height: 96px;
+      resize: vertical;
+      border: 0;
+      outline: 0;
+      color: var(--ink);
+      background: transparent;
+      font-size: 16px;
+      line-height: 1.35;
+    }
+
+    .attachments {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+      font-size: 18px;
+    }
+
+    .note-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .note-tool {
+      min-height: 34px;
+      padding: 4px 8px;
+      font-size: 18px;
+      background: rgba(255, 253, 248, .54);
+      box-shadow: none;
+    }
+
+    .attachments img {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 49, 58, .12);
+    }
+
+    .attachments a {
+      color: #365f74;
+      overflow-wrap: anywhere;
+    }
+
+    .attachments audio {
+      width: 100%;
+    }
+
+    .reactions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .reaction-button {
+      min-height: 38px;
+      padding: 4px 8px;
+      font-size: 18px;
+      background: rgba(255, 253, 248, .54);
+      box-shadow: none;
+    }
+
+    .sidepanel {
+      border-right: 0;
+      border-left: 1px solid var(--line);
+      width: 160px;
+      min-width: 150px;
+      max-width: 360px;
+      padding: 10px;
+      overflow: auto;
+      resize: horizontal;
+      font-size: 16px;
+    }
+
+    .panel-section {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .panel-section:first-child {
+      padding-top: 0;
+    }
+
+    .panel-title {
+      margin: 0 0 10px;
+      font-size: 16px;
+      line-height: 1.25;
+    }
+
+    .board-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .board-card {
+      position: relative;
+      display: block;
+    }
+
+    .board-item {
+      display: grid;
+      gap: 4px;
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: rgba(255, 253, 248, .62);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .board-item.active {
+      color: #ffffff;
+      background: var(--sage-deep);
+      border-color: var(--sage-deep);
+    }
+
+    .board-item span {
+      color: inherit;
+      font-size: 13px;
+      opacity: .84;
+    }
+
+    .delete-board {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      min-width: 0;
+      width: 24px;
+      min-height: 24px;
+      height: 24px;
+      padding: 0;
+      border-radius: 50%;
+      color: #6d3f48;
+      background: rgba(216, 175, 169, .28);
+      font-size: 14px;
+      line-height: 1;
+      box-shadow: none;
+    }
+
+    .status-line {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .fab {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      font-size: 44px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: 0 18px 34px rgba(52, 49, 58, .22);
+      z-index: 20;
+    }
+
+    .hidden-file {
+      position: fixed;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    @media (max-width: 1060px) {
+      body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .topbar,
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .board-meta {
+        justify-content: start;
+      }
+
+      .field {
+        width: 100%;
+      }
+
+      .toolbar {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .sidepanel {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .board {
+        height: 68vh;
+      }
+
+      .board-canvas {
+        width: 1600px;
+        height: 1100px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <img class="avatar" src="assets/avatar.jpg" alt="陳佳釧老師 Q 版人像">
+      <div class="brand">
+        <h1>
+          <span class="hand-title">大聲說出來<span class="drawn-dash" aria-hidden="true"></span>互動討論牆</span>
+        </h1>
+        <div class="designer">陳佳釧老師設計</div>
+      </div>
+      <div class="board-meta">
+        <div class="timer" aria-label="課堂計時器">
+          <input class="timer-input" id="timerMinutes" type="number" min="1" max="120" value="3" aria-label="計時分鐘">
+          <span class="timer-display" id="timerDisplay">03:00</span>
+          <button class="timer-button" id="timerStart" type="button">開始</button>
+          <button class="timer-button" id="timerReset" type="button">重設</button>
+        </div>
+        <input class="field" id="boardTitle" aria-label="白板名稱">
+        <button class="button primary" id="newBoardButton" type="button">新白板</button>
+        <button class="button" id="archiveButton" type="button">存檔</button>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <main class="board" id="board" aria-label="互動討論牆">
+        <div class="board-canvas" id="canvas"></div>
+      </main>
+
+      <aside class="sidepanel">
+        <section class="panel-section">
+          <h2 class="panel-title">白板</h2>
+          <p class="status-line" id="boardStats"></p>
+        </section>
+        <section class="panel-section">
+          <h2 class="panel-title">課程存檔</h2>
+          <ul class="board-list" id="boardList"></ul>
+        </section>
+        <section class="panel-section">
+          <h2 class="panel-title">儲存</h2>
+          <p class="status-line" id="saveStatus"></p>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <button class="fab" id="addButton" type="button" aria-label="新增便利貼">+</button>
+  <input class="hidden-file" id="imageInput" type="file" accept="image/*">
+
+  <script>
+    const storageKey = 'sunny-discussion-wall-v2';
+    const colors = ['butter', 'rose', 'sage', 'blue', 'lavender'];
+    const reactionTypes = ['👍', '❤️', '💡', '🙂'];
+
+    const boardEl = document.getElementById('board');
+    const canvasEl = document.getElementById('canvas');
+    const addButton = document.getElementById('addButton');
+    const newBoardButton = document.getElementById('newBoardButton');
+    const archiveButton = document.getElementById('archiveButton');
+    const boardTitleInput = document.getElementById('boardTitle');
+    const boardListEl = document.getElementById('boardList');
+    const boardStatsEl = document.getElementById('boardStats');
+    const saveStatusEl = document.getElementById('saveStatus');
+    const imageInput = document.getElementById('imageInput');
+    const timerMinutes = document.getElementById('timerMinutes');
+    const timerPanel = document.querySelector('.timer');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerStart = document.getElementById('timerStart');
+    const timerReset = document.getElementById('timerReset');
+
+    let state = loadState();
+    let currentBoardId = state.currentBoardId;
+    let selectedNoteId = null;
+    let imageTargetNoteId = null;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let timerTotalSeconds = 180;
+    let timerRemainingSeconds = 180;
+    let timerId = null;
+    let lastBeepSecond = null;
+
+    function makeId(prefix) {
+      return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function nowText() {
+      return new Date().toLocaleString('zh-TW', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function formatTime(seconds) {
+      const safeSeconds = Math.max(0, seconds);
+      const minutes = Math.floor(safeSeconds / 60).toString().padStart(2, '0');
+      const rest = Math.floor(safeSeconds % 60).toString().padStart(2, '0');
+      return `${minutes}:${rest}`;
+    }
+
+    function updateTimerDisplay() {
+      timerDisplay.textContent = formatTime(timerRemainingSeconds);
+      timerDisplay.classList.toggle('danger', timerRemainingSeconds <= 10 && timerRemainingSeconds > 0);
+    }
+
+    function beep() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const context = new AudioContext();
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 880;
+        gain.gain.setValueAtTime(.001, context.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.12, context.currentTime + .02);
+        gain.gain.exponentialRampToValueAtTime(.001, context.currentTime + .18);
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start();
+        oscillator.stop(context.currentTime + .2);
+      } catch (error) {
+        console.warn(error);
+      }
+    }
+
+    function setTimerFromInput() {
+      const minutes = Math.max(1, Math.min(120, Number(timerMinutes.value) || 1));
+      timerMinutes.value = minutes;
+      timerTotalSeconds = minutes * 60;
+      timerRemainingSeconds = timerTotalSeconds;
+      lastBeepSecond = null;
+      updateTimerDisplay();
+    }
+
+    function tickTimer() {
+      timerRemainingSeconds = Math.max(0, timerRemainingSeconds - 1);
+      if (timerRemainingSeconds <= 10 && timerRemainingSeconds > 0 && lastBeepSecond !== timerRemainingSeconds) {
+        lastBeepSecond = timerRemainingSeconds;
+        beep();
+      }
+      if (timerRemainingSeconds === 0) {
+        beep();
+        clearInterval(timerId);
+        timerId = null;
+        timerStart.textContent = '開始';
+      }
+      updateTimerDisplay();
+    }
+
+    function anonymousName() {
+      return `匿名 ${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
+    function defaultBoard() {
+      const id = makeId('board');
+      return {
+        id,
+        title: `互動討論牆 ${nowText()}`,
+        archived: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        notes: []
+      };
+    }
+
+    function loadState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(storageKey));
+        if (parsed && parsed.boards && parsed.currentBoardId) return parsed;
+      } catch (error) {
+        console.warn(error);
+      }
+      const board = defaultBoard();
+      return {
+        currentBoardId: board.id,
+        boards: [board]
+      };
+    }
+
+    function saveState() {
+      const board = currentBoard();
+      if (board) board.updatedAt = Date.now();
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      saveStatusEl.textContent = `本機已儲存：${nowText()}`;
+    }
+
+    function currentBoard() {
+      return state.boards.find((board) => board.id === currentBoardId) || state.boards[0];
+    }
+
+    function boardPointFromEvent(event) {
+      const rect = canvasEl.getBoundingClientRect();
+      return {
+        x: Math.max(20, Math.round(event.clientX - rect.left + boardEl.scrollLeft)),
+        y: Math.max(20, Math.round(event.clientY - rect.top + boardEl.scrollTop))
+      };
+    }
+
+    function createNoteAt(x, y, seed = {}) {
+      const board = currentBoard();
+      const note = {
+        id: makeId('note'),
+        x,
+        y,
+        width: seed.width || 300,
+        height: seed.height || 174,
+        color: colors[board.notes.length % colors.length],
+        text: seed.text || '',
+        author: seed.author || anonymousName(),
+        pinned: seed.pinned || false,
+        createdAt: Date.now(),
+        reactions: {},
+        attachments: seed.attachments || []
+      };
+      board.notes.push(note);
+      selectedNoteId = note.id;
+      saveState();
+      render();
+      focusNote(note.id);
+      return note;
+    }
+
+    function focusNote(noteId) {
+      requestAnimationFrame(() => {
+        const textarea = document.querySelector(`[data-note-id="${noteId}"] textarea`);
+        if (textarea) textarea.focus();
+      });
+    }
+
+    function render() {
+      const board = currentBoard();
+      currentBoardId = board.id;
+      state.currentBoardId = currentBoardId;
+      boardTitleInput.value = board.title;
+      canvasEl.innerHTML = '';
+
+      board.notes.forEach((note) => {
+        canvasEl.appendChild(renderNote(note));
+      });
+
+      boardStatsEl.textContent = `${board.notes.length} 張便利貼，${board.archived ? '已存檔' : '進行中'}`;
+      saveStatusEl.textContent = `本機已儲存：${nowText()}`;
+      renderBoardList();
+    }
+
+    function renderBoardList() {
+      boardListEl.innerHTML = '';
+      [...state.boards]
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .forEach((board) => {
+          const li = document.createElement('li');
+          li.className = 'board-card';
+
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = `board-item${board.id === currentBoardId ? ' active' : ''}`;
+          item.innerHTML = `<strong>${escapeHtml(board.title)}</strong><span>${board.notes.length} 張｜${new Date(board.updatedAt).toLocaleDateString('zh-TW')}</span>`;
+          item.addEventListener('click', () => {
+            currentBoardId = board.id;
+            state.currentBoardId = board.id;
+            saveState();
+            render();
+          });
+
+          const remove = document.createElement('button');
+          remove.type = 'button';
+          remove.className = 'delete-board';
+          remove.setAttribute('aria-label', `刪除 ${board.title}`);
+          remove.textContent = '×';
+          remove.addEventListener('click', () => deleteBoard(board.id));
+
+          li.append(item, remove);
+          boardListEl.appendChild(li);
+        });
+    }
+
+    function deleteBoard(boardId) {
+      if (state.boards.length <= 1) {
+        const fresh = defaultBoard();
+        state.boards = [fresh];
+        currentBoardId = fresh.id;
+      } else {
+        state.boards = state.boards.filter((board) => board.id !== boardId);
+        if (currentBoardId === boardId) currentBoardId = state.boards[0].id;
+      }
+      state.currentBoardId = currentBoardId;
+      saveState();
+      render();
+    }
+
+    function renderNote(note) {
+      const noteEl = document.createElement('article');
+      noteEl.className = `note${note.pinned ? ' pinned' : ''}`;
+      noteEl.dataset.noteId = note.id;
+      noteEl.dataset.color = note.color;
+      noteEl.style.left = `${note.x}px`;
+      noteEl.style.top = `${note.y}px`;
+      noteEl.style.width = `${note.width || 300}px`;
+      noteEl.style.height = `${note.height || 174}px`;
+
+      const reactions = reactionTypes.map((type) => {
+        const count = note.reactions[type] || 0;
+        return `<button class="reaction-button" type="button" data-reaction="${type}" aria-label="${type} ${count}">${type} ${count}</button>`;
+      }).join('');
+
+      noteEl.innerHTML = `
+        <div class="note-header">
+          <input class="author-input" aria-label="留言者名稱" value="${escapeAttr(note.author)}">
+          <div>
+            <button class="icon-button pin-button" type="button" data-action="pin" aria-label="釘選便利貼" title="釘選">${note.pinned ? '◆' : '◇'}</button>
+            <button class="icon-button" type="button" data-action="delete" aria-label="刪除">×</button>
+          </div>
+        </div>
+        <textarea aria-label="便利貼內容" placeholder="留言">${escapeHtml(note.text)}</textarea>
+        <div class="note-tools" aria-label="便利貼附件工具">
+          <button class="note-tool" type="button" data-action="image">圖片</button>
+          <button class="note-tool" type="button" data-action="link">連結</button>
+          <button class="note-tool" type="button" data-action="audio">錄音</button>
+        </div>
+        <div class="attachments">${renderAttachments(note.attachments)}</div>
+        <div class="reactions">${reactions}</div>
+      `;
+
+      attachNoteEvents(noteEl, note);
+      return noteEl;
+    }
+
+    function renderAttachments(attachments) {
+      return attachments.map((item) => {
+        if (item.type === 'image') {
+          return `<img src="${item.data}" alt="上傳圖片">`;
+        }
+        if (item.type === 'link') {
+          return `<a href="${escapeAttr(item.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.label || item.url)}</a>`;
+        }
+        if (item.type === 'audio') {
+          return `<audio controls src="${item.data}"></audio>`;
+        }
+        return '';
+      }).join('');
+    }
+
+    function attachNoteEvents(noteEl, note) {
+      const textarea = noteEl.querySelector('textarea');
+      textarea.addEventListener('input', () => {
+        note.text = textarea.value;
+        saveState();
+      });
+
+      const author = noteEl.querySelector('.author-input');
+      author.addEventListener('input', () => {
+        note.author = author.value.trim() || '匿名';
+        saveState();
+      });
+
+      noteEl.querySelector('[data-action="delete"]').addEventListener('click', () => {
+        const board = currentBoard();
+        board.notes = board.notes.filter((item) => item.id !== note.id);
+        saveState();
+        render();
+      });
+
+      noteEl.querySelector('[data-action="pin"]').addEventListener('click', () => {
+        note.pinned = !note.pinned;
+        saveState();
+        render();
+      });
+
+      noteEl.querySelector('[data-action="image"]').addEventListener('click', () => {
+        selectedNoteId = note.id;
+        imageTargetNoteId = note.id;
+        imageInput.click();
+      });
+
+      noteEl.querySelector('[data-action="link"]').addEventListener('click', () => {
+        selectedNoteId = note.id;
+        const url = prompt('貼上連結');
+        if (!url) return;
+        const normalized = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+        note.attachments.push({ type: 'link', url: normalized, label: normalized.replace(/^https?:\/\//i, '') });
+        saveState();
+        render();
+      });
+
+      noteEl.querySelector('[data-action="audio"]').addEventListener('click', () => {
+        selectedNoteId = note.id;
+        toggleRecording(note.id);
+      });
+
+      noteEl.querySelectorAll('[data-reaction]').forEach((button) => {
+        button.addEventListener('click', () => {
+          const reaction = button.dataset.reaction;
+          note.reactions[reaction] = (note.reactions[reaction] || 0) + 1;
+          saveState();
+          render();
+        });
+      });
+
+      const resizeObserver = new ResizeObserver(() => {
+        note.width = Math.round(noteEl.offsetWidth);
+        note.height = Math.round(noteEl.offsetHeight);
+        saveState();
+      });
+      resizeObserver.observe(noteEl);
+
+      noteEl.addEventListener('pointerdown', (event) => {
+        if (event.target.closest('textarea, input, button, a, audio')) return;
+        if (note.pinned) return;
+        selectedNoteId = note.id;
+        noteEl.setPointerCapture(event.pointerId);
+        noteEl.dataset.dragging = 'true';
+        noteEl.dataset.startX = event.clientX;
+        noteEl.dataset.startY = event.clientY;
+        noteEl.dataset.noteX = note.x;
+        noteEl.dataset.noteY = note.y;
+        noteEl.style.cursor = 'grabbing';
+      });
+
+      noteEl.addEventListener('pointermove', (event) => {
+        if (noteEl.dataset.dragging !== 'true') return;
+        const dx = event.clientX - Number(noteEl.dataset.startX);
+        const dy = event.clientY - Number(noteEl.dataset.startY);
+        note.x = Math.max(0, Math.round(Number(noteEl.dataset.noteX) + dx));
+        note.y = Math.max(0, Math.round(Number(noteEl.dataset.noteY) + dy));
+        noteEl.style.left = `${note.x}px`;
+        noteEl.style.top = `${note.y}px`;
+      });
+
+      noteEl.addEventListener('pointerup', (event) => {
+        if (noteEl.dataset.dragging !== 'true') return;
+        noteEl.releasePointerCapture(event.pointerId);
+        noteEl.dataset.dragging = 'false';
+        noteEl.style.cursor = 'grab';
+        saveState();
+      });
+    }
+
+    function noteById(noteId) {
+      return currentBoard().notes.find((note) => note.id === noteId);
+    }
+
+    function addAttachmentToNote(noteId, attachment) {
+      const note = noteById(noteId);
+      if (!note) return;
+      note.attachments.push(attachment);
+      saveState();
+      render();
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/`/g, '&#096;');
+    }
+
+    async function toggleRecording(noteId) {
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+        mediaRecorder.addEventListener('dataavailable', (recordEvent) => {
+          if (recordEvent.data.size > 0) audioChunks.push(recordEvent.data);
+        });
+        mediaRecorder.addEventListener('stop', () => {
+          const blob = new Blob(audioChunks, { type: 'audio/webm' });
+          const reader = new FileReader();
+          reader.onload = () => addAttachmentToNote(noteId, { type: 'audio', data: reader.result });
+          reader.readAsDataURL(blob);
+          stream.getTracks().forEach((track) => track.stop());
+        });
+        mediaRecorder.start();
+      } catch (error) {
+        alert('目前無法啟用麥克風。');
+      }
+    }
+
+    addButton.addEventListener('click', () => {
+      createNoteAt(boardEl.scrollLeft + 140, boardEl.scrollTop + 120);
+    });
+
+    boardEl.addEventListener('dblclick', (event) => {
+      if (event.target.closest('.note')) return;
+      const point = boardPointFromEvent(event);
+      createNoteAt(point.x, point.y);
+    });
+
+    newBoardButton.addEventListener('click', () => {
+      const board = defaultBoard();
+      state.boards.push(board);
+      currentBoardId = board.id;
+      saveState();
+      render();
+    });
+
+    archiveButton.addEventListener('click', () => {
+      const board = currentBoard();
+      board.archived = true;
+      saveState();
+      render();
+    });
+
+    boardTitleInput.addEventListener('input', () => {
+      currentBoard().title = boardTitleInput.value.trim() || '未命名白板';
+      saveState();
+      renderBoardList();
+    });
+
+    timerMinutes.addEventListener('change', () => {
+      if (timerId) return;
+      setTimerFromInput();
+    });
+
+    timerStart.addEventListener('click', () => {
+      if (timerId) {
+        clearInterval(timerId);
+        timerId = null;
+        timerStart.textContent = '開始';
+        return;
+      }
+      if (timerRemainingSeconds <= 0) setTimerFromInput();
+      timerStart.textContent = '暫停';
+      tickTimer();
+      timerId = setInterval(tickTimer, 1000);
+    });
+
+    timerReset.addEventListener('click', () => {
+      if (timerId) clearInterval(timerId);
+      timerId = null;
+      timerStart.textContent = '開始';
+      setTimerFromInput();
+    });
+
+    timerPanel.addEventListener('click', (event) => {
+      if (event.target.closest('button, input')) return;
+      timerPanel.classList.toggle('expanded');
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') timerPanel.classList.remove('expanded');
+    });
+
+    imageInput.addEventListener('change', () => {
+      const file = imageInput.files[0];
+      if (!file || !imageTargetNoteId) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        addAttachmentToNote(imageTargetNoteId, { type: 'image', data: reader.result, name: file.name });
+        imageTargetNoteId = null;
+        imageInput.value = '';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    if (!currentBoard()) {
+      const board = defaultBoard();
+      state.boards.push(board);
+      currentBoardId = board.id;
+    }
+
+    render();
+    saveState();
+    setTimerFromInput();
+  </script>
+</body>
+</html>

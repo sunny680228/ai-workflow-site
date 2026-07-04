@@ -65,6 +65,38 @@
       font-size: 24px;
     }
 
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .header-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 56px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(117, 106, 150, .28);
+      color: #ffffff;
+      background: var(--lavender-deep);
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-decoration: none;
+      box-shadow: 0 10px 20px rgba(52, 49, 58, .12);
+      transition: transform .18s ease, background-color .18s ease;
+    }
+
+    .header-link:hover,
+    .header-link:focus-visible {
+      transform: translateY(-2px);
+      outline: 3px solid rgba(159, 178, 191, .45);
+      outline-offset: 2px;
+    }
+
     .tabs {
       display: flex;
       gap: 10px;
@@ -288,6 +320,9 @@
     <header>
       <h1>教學 × 數位 × 實踐力：用 AI 打造你的高效工作流｜陳佳釧老師</h1>
       <p class="subtitle">從資訊轟炸到可執行流程，把 Gemini、NotebookLM 與 GEM 變成備課、教學、評量的省力夥伴。</p>
+      <div class="header-actions">
+        <a class="header-link" href="discussion-wall/" target="_blank" rel="noopener noreferrer">開啟互動討論牆</a>
+      </div>
     </header>
 
     <nav class="tabs" role="tablist" aria-label="教學網站分頁">
