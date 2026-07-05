@@ -1,0 +1,872 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>一票入魂—線上即時投票器，陳佳釧老師設計</title>
+  <style>
+    :root {
+      --ink: #34313a;
+      --muted: #6f6873;
+      --paper: #f6f1eb;
+      --surface: #fffdf8;
+      --lavender: #aaa2c5;
+      --lavender-deep: #756a96;
+      --sage: #aeb8a5;
+      --sage-deep: #788a70;
+      --blue: #9fb2bf;
+      --rose: #d8afa9;
+      --clay: #c5aa98;
+      --butter: #e7d79d;
+      --line: rgba(52, 49, 58, .15);
+      --shadow: 0 18px 40px rgba(52, 49, 58, .12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 16%, rgba(216, 175, 169, .32), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(159, 178, 191, .30), transparent 24%),
+        linear-gradient(135deg, rgba(170, 162, 197, .22), transparent 34%),
+        var(--paper);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+      font-size: 24px;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    textarea,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .shell {
+      width: min(1280px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 20px 0 34px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .9);
+      box-shadow: var(--shadow);
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 32px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .hand-title {
+      position: relative;
+      display: inline-block;
+      padding: 4px 12px 8px;
+      color: #e8897e;
+      font-weight: 900;
+      -webkit-text-stroke: 1.2px #252229;
+      text-shadow:
+        2px 2px 0 #252229,
+        -1px -1px 0 #fffaf4,
+        0 2px 0 rgba(255, 255, 255, .72);
+      transform: rotate(-1deg);
+    }
+
+    .hand-title::before {
+      content: "✧  ☆  ♡  ⌒";
+      position: absolute;
+      top: -15px;
+      left: 14px;
+      color: #252229;
+      font-size: 15px;
+      -webkit-text-stroke: 0;
+      text-shadow: none;
+    }
+
+    .teacher {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--muted);
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 16px;
+      margin-top: 16px;
+      align-items: start;
+    }
+
+    .panel,
+    .host-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .93);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      padding: 20px;
+      min-height: calc(100vh - 150px);
+    }
+
+    .host-panel {
+      position: sticky;
+      top: 12px;
+      padding: 14px;
+      font-size: 16px;
+    }
+
+    .host-panel h2 {
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      min-height: 42px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      background: var(--surface);
+      font-size: 16px;
+      outline: none;
+    }
+
+    textarea {
+      min-height: 78px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: rgba(117, 106, 150, .55);
+      box-shadow: 0 0 0 3px rgba(170, 162, 197, .24);
+    }
+
+    .button-row,
+    .option-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 8px 12px;
+      border: 1px solid rgba(117, 106, 150, .28);
+      border-radius: 8px;
+      color: #ffffff;
+      background: var(--lavender-deep);
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.2;
+      box-shadow: 0 10px 18px rgba(52, 49, 58, .10);
+    }
+
+    .btn.secondary {
+      color: var(--ink);
+      background: var(--surface);
+    }
+
+    .btn.sage {
+      background: var(--sage-deep);
+    }
+
+    .btn.rose {
+      background: #a85f66;
+    }
+
+    .btn.icon {
+      width: 42px;
+      padding: 0;
+      font-size: 18px;
+    }
+
+    .option-editor {
+      display: grid;
+      grid-template-columns: 46px 1fr 42px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .option-editor input:first-child {
+      text-align: center;
+    }
+
+    .question-card {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(174, 184, 165, .20), transparent 46%),
+        var(--surface);
+      overflow: hidden;
+    }
+
+    .question-card::after {
+      content: "✦";
+      position: absolute;
+      right: 22px;
+      top: 18px;
+      color: rgba(117, 106, 150, .36);
+      font-size: 54px;
+      transform: rotate(14deg);
+    }
+
+    .question-card h2 {
+      max-width: 880px;
+      font-size: 32px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    .meta-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 20px;
+    }
+
+    .timer {
+      color: var(--lavender-deep);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer.closed {
+      color: #a85f66;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .vote-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: center;
+      min-height: 126px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: 0 12px 24px rgba(52, 49, 58, .08);
+      overflow: hidden;
+    }
+
+    .vote-card.voted {
+      outline: 4px solid rgba(170, 162, 197, .38);
+    }
+
+    .vote-card[aria-disabled="true"] {
+      cursor: default;
+      opacity: .82;
+    }
+
+    .icon-badge {
+      display: grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: rgba(170, 162, 197, .20);
+      font-size: 38px;
+      box-shadow: inset 0 0 0 2px rgba(52, 49, 58, .08);
+    }
+
+    .option-text {
+      position: relative;
+      z-index: 1;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .result-row {
+      display: grid;
+      grid-template-columns: 88px 1fr 92px;
+      gap: 12px;
+      align-items: center;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, .82);
+    }
+
+    .result-icon {
+      display: grid;
+      place-items: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      font-size: 34px;
+      background: rgba(170, 162, 197, .22);
+    }
+
+    .result-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .bar {
+      height: 22px;
+      border-radius: 999px;
+      background: rgba(52, 49, 58, .08);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      transition: width .28s ease;
+    }
+
+    .percent {
+      font-size: 22px;
+      font-weight: 900;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      margin-top: 18px;
+      border: 2px dashed rgba(117, 106, 150, .28);
+      border-radius: 8px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .tiny {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 980px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .host-panel {
+        position: static;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        font-size: 20px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-row {
+        grid-template-columns: 62px 1fr;
+      }
+
+      .percent {
+        grid-column: 2;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <h1><span class="hand-title">一票入魂—線上即時投票器</span></h1>
+        <p class="teacher">陳佳釧老師設計</p>
+      </div>
+      <div class="status-pill" id="syncStatus">準備同步</div>
+    </header>
+
+    <div class="main-grid">
+      <main class="panel">
+        <section class="question-card">
+          <h2 id="questionText">你想投給哪一個選項？</h2>
+          <div class="meta-line">
+            <span id="pollState">開放投票中</span>
+            <span class="timer" id="timerText">未設定結束時間</span>
+            <span id="totalText">0 票</span>
+          </div>
+        </section>
+
+        <section class="options-grid" id="optionsGrid" aria-label="投票選項"></section>
+        <section id="results"></section>
+      </main>
+
+      <aside class="host-panel" aria-label="主持人控制台">
+        <h2>主持人控制</h2>
+
+        <div class="field">
+          <label for="pollTitle">投票名稱</label>
+          <input id="pollTitle" value="即時投票">
+        </div>
+
+        <div class="field">
+          <label for="questionInput">投票題目</label>
+          <textarea id="questionInput">你想投給哪一個選項？</textarea>
+        </div>
+
+        <div class="field">
+          <label>選項</label>
+          <div id="optionEditors"></div>
+          <div class="button-row">
+            <button class="btn secondary" id="addOptionBtn" type="button">＋ 增加選項</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="minutesInput">幾分鐘後關閉</label>
+          <input id="minutesInput" type="number" min="1" step="1" value="3">
+        </div>
+
+        <div class="button-row">
+          <button class="btn sage" id="setTimeBtn" type="button">設定時間</button>
+          <button class="btn secondary" id="clearTimeBtn" type="button">清除時間</button>
+        </div>
+
+        <div class="button-row" style="margin-top: 10px;">
+          <button class="btn" id="saveBtn" type="button">儲存題目</button>
+          <button class="btn rose" id="closeBtn" type="button">關閉投票</button>
+          <button class="btn secondary" id="openBtn" type="button">重新開放</button>
+        </div>
+
+        <div class="button-row" style="margin-top: 10px;">
+          <button class="btn secondary" id="newPollBtn" type="button">新投票</button>
+          <button class="btn secondary" id="copyBtn" type="button">複製連結</button>
+        </div>
+
+        <p class="tiny" style="margin-top: 12px;">
+          同一個連結可給學生投票；主持人可增加選項、設定關閉時間或手動關閉投票。
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const apiBase = '/api/polls';
+    const iconChoices = ['🌿', '☁️', '⭐', '💡', '🫧', '📚', '✏️', '🎯', '🧩', '🎨'];
+    const colors = ['#aeb8a5', '#9fb2bf', '#d8afa9', '#aaa2c5', '#c5aa98', '#e7d79d'];
+    const params = new URLSearchParams(location.search);
+    const pollId = params.get('poll') || `poll-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+    const voterKey = `sunny-poll-voter-${pollId}`;
+    const votedKey = `sunny-poll-voted-${pollId}`;
+    const voterId = localStorage.getItem(voterKey) || crypto.randomUUID();
+
+    localStorage.setItem(voterKey, voterId);
+
+    if (!params.get('poll')) {
+      params.set('poll', pollId);
+      history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    }
+
+    let poll = null;
+    let saving = false;
+
+    const syncStatus = document.getElementById('syncStatus');
+    const questionText = document.getElementById('questionText');
+    const pollState = document.getElementById('pollState');
+    const timerText = document.getElementById('timerText');
+    const totalText = document.getElementById('totalText');
+    const optionsGrid = document.getElementById('optionsGrid');
+    const results = document.getElementById('results');
+    const optionEditors = document.getElementById('optionEditors');
+    const pollTitle = document.getElementById('pollTitle');
+    const questionInput = document.getElementById('questionInput');
+    const minutesInput = document.getElementById('minutesInput');
+    const hostPanel = document.querySelector('.host-panel');
+
+    function setStatus(text) {
+      syncStatus.textContent = text;
+    }
+
+    function uid(prefix) {
+      return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    }
+
+    function makeDefaultPoll() {
+      return {
+        id: pollId,
+        title: '即時投票',
+        question: '你想投給哪一個選項？',
+        closed: false,
+        closeAt: 0,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        voters: {},
+        options: [
+          { id: uid('opt'), text: '我支持這個做法', icon: '🌿', color: colors[0], votes: 0 },
+          { id: uid('opt'), text: '我想再討論看看', icon: '☁️', color: colors[1], votes: 0 },
+          { id: uid('opt'), text: '我有不同想法', icon: '💡', color: colors[2], votes: 0 }
+        ]
+      };
+    }
+
+    async function api(path = '', options = {}) {
+      const response = await fetch(`${apiBase}${path}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || '雲端同步失敗');
+      }
+
+      if (response.status === 204) return {};
+      return response.json();
+    }
+
+    async function loadPoll() {
+      try {
+        const data = await api(`?id=${encodeURIComponent(pollId)}`);
+        poll = data.poll || makeDefaultPoll();
+        if (!data.poll) await savePoll(false);
+        setStatus(data.storage === 'vercel-kv' ? '雲端同步中' : '本機暫存');
+        render();
+      } catch (error) {
+        poll = poll || makeDefaultPoll();
+        setStatus('本機預覽');
+        render();
+      }
+    }
+
+    async function savePoll(showStatus = true) {
+      if (!poll || saving) return;
+      saving = true;
+      try {
+        const data = await api(`?id=${encodeURIComponent(poll.id)}`, {
+          method: 'PUT',
+          body: JSON.stringify(poll)
+        });
+        poll = data.poll;
+        if (showStatus) setStatus(data.storage === 'vercel-kv' ? '已同步' : '本機暫存');
+        render();
+      } catch (error) {
+        setStatus(error.message);
+      } finally {
+        saving = false;
+      }
+    }
+
+    async function vote(optionId) {
+      if (!poll || isClosed()) return;
+
+      applyLocalVote(optionId);
+      setStatus('投票已更新');
+
+      try {
+        const data = await api(`?id=${encodeURIComponent(poll.id)}`, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'vote', voterId, optionId })
+        });
+        poll = data.poll;
+        localStorage.setItem(votedKey, optionId);
+        setStatus(data.storage === 'vercel-kv' ? '投票已同步' : '投票已暫存');
+        render();
+      } catch (error) {
+        setStatus(error.message === 'poll closed' ? '投票已關閉' : '本機預覽已更新');
+      }
+    }
+
+    function applyLocalVote(optionId) {
+      const previous = poll.voters[voterId] || localStorage.getItem(votedKey);
+      if (previous && previous !== optionId) {
+        const oldOption = poll.options.find((option) => option.id === previous);
+        if (oldOption) oldOption.votes = Math.max(0, Number(oldOption.votes || 0) - 1);
+      }
+
+      if (previous !== optionId) {
+        const option = poll.options.find((item) => item.id === optionId);
+        if (option) option.votes = Number(option.votes || 0) + 1;
+      }
+
+      poll.voters[voterId] = optionId;
+      localStorage.setItem(votedKey, optionId);
+      render();
+    }
+
+    function isClosed() {
+      return poll.closed || Boolean(poll.closeAt && Date.now() >= poll.closeAt);
+    }
+
+    function totalVotes() {
+      return poll.options.reduce((sum, option) => sum + Number(option.votes || 0), 0);
+    }
+
+    function formatTimer() {
+      if (!poll.closeAt) return '未設定結束時間';
+      const remaining = Math.max(0, poll.closeAt - Date.now());
+      if (remaining <= 0) return '時間已到';
+      const totalSeconds = Math.ceil(remaining / 1000);
+      const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+      const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+      return `${minutes}:${seconds}`;
+    }
+
+    function render() {
+      if (!poll) return;
+      const closed = isClosed();
+      const total = totalVotes();
+      const selected = localStorage.getItem(votedKey) || poll.voters[voterId] || '';
+      const editingText = document.activeElement && (
+        document.activeElement === pollTitle ||
+        document.activeElement === questionInput ||
+        optionEditors.contains(document.activeElement)
+      );
+
+      if (!editingText) {
+        pollTitle.value = poll.title;
+        questionInput.value = poll.question;
+      }
+      questionText.textContent = poll.question;
+      pollState.textContent = closed ? '投票已關閉' : '開放投票中';
+      timerText.textContent = formatTimer();
+      timerText.classList.toggle('closed', closed);
+      totalText.textContent = `${total} 票`;
+
+      optionsGrid.innerHTML = '';
+      if (poll.options.length === 0) {
+        optionsGrid.innerHTML = '<div class="empty-state">請先在右側增加投票選項</div>';
+      }
+
+      poll.options.forEach((option) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'vote-card';
+        card.setAttribute('aria-disabled', closed ? 'true' : 'false');
+        card.classList.toggle('voted', selected === option.id);
+        card.innerHTML = `
+          <span class="icon-badge" style="background:${option.color}33">${option.icon}</span>
+          <span class="option-text">${escapeHtml(option.text)}</span>
+        `;
+        card.addEventListener('click', () => vote(option.id));
+        optionsGrid.appendChild(card);
+      });
+
+      renderResults(total);
+      renderOptionEditors(!optionEditors.contains(document.activeElement));
+    }
+
+    function renderResults(total) {
+      results.innerHTML = '';
+      poll.options.forEach((option) => {
+        const percent = total ? Math.round((option.votes / total) * 100) : 0;
+        const row = document.createElement('div');
+        row.className = 'result-row';
+        row.innerHTML = `
+          <span class="result-icon" style="background:${option.color}33">${option.icon}</span>
+          <div>
+            <div class="result-label">
+              <span>${escapeHtml(option.text)}</span>
+              <span>${option.votes} 票</span>
+            </div>
+            <div class="bar"><div class="bar-fill" style="width:${percent}%; background:${option.color};"></div></div>
+          </div>
+          <strong class="percent">${percent}%</strong>
+        `;
+        results.appendChild(row);
+      });
+    }
+
+    function renderOptionEditors(force = true) {
+      const active = document.activeElement;
+      if (!force && active && optionEditors.contains(active)) return;
+      optionEditors.innerHTML = '';
+      poll.options.forEach((option, index) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'option-editor';
+        wrap.innerHTML = `
+          <input aria-label="選項圖示" value="${escapeAttr(option.icon)}" data-role="icon" data-id="${option.id}">
+          <input aria-label="選項文字" value="${escapeAttr(option.text)}" data-role="text" data-id="${option.id}">
+          <button class="btn secondary icon" type="button" title="刪除" data-role="remove" data-id="${option.id}">×</button>
+        `;
+        optionEditors.appendChild(wrap);
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      }[char]));
+    }
+
+    function escapeAttr(value) {
+      return escapeHtml(value).replace(/"/g, '&quot;');
+    }
+
+    optionEditors.addEventListener('input', (event) => {
+      const id = event.target.dataset.id;
+      const role = event.target.dataset.role;
+      const option = poll.options.find((item) => item.id === id);
+      if (!option) return;
+      option[role] = event.target.value;
+      renderResults(totalVotes());
+      optionsGrid.querySelectorAll('.vote-card').forEach((node, index) => {
+        const item = poll.options[index];
+        node.querySelector('.icon-badge').textContent = item.icon;
+        node.querySelector('.option-text').textContent = item.text;
+      });
+    });
+
+    optionEditors.addEventListener('click', (event) => {
+      if (event.target.dataset.role !== 'remove') return;
+      poll.options = poll.options.filter((option) => option.id !== event.target.dataset.id);
+      render();
+    });
+
+    document.getElementById('addOptionBtn').addEventListener('click', () => {
+      const index = poll.options.length;
+      poll.options.push({
+        id: uid('opt'),
+        text: `新選項 ${index + 1}`,
+        icon: iconChoices[index % iconChoices.length],
+        color: colors[index % colors.length],
+        votes: 0
+      });
+      render();
+      renderOptionEditors(true);
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      poll.title = pollTitle.value.trim() || '即時投票';
+      poll.question = questionInput.value.trim() || '你想投給哪一個選項？';
+      savePoll();
+    });
+
+    document.getElementById('setTimeBtn').addEventListener('click', async () => {
+      const minutes = Math.max(1, Number(minutesInput.value || 1));
+      poll.closeAt = Date.now() + minutes * 60 * 1000;
+      poll.closed = false;
+      await savePoll();
+    });
+
+    document.getElementById('clearTimeBtn').addEventListener('click', async () => {
+      poll.closeAt = 0;
+      await savePoll();
+    });
+
+    document.getElementById('closeBtn').addEventListener('click', async () => {
+      poll.closed = true;
+      await savePoll();
+    });
+
+    document.getElementById('openBtn').addEventListener('click', async () => {
+      poll.closed = false;
+      await savePoll();
+    });
+
+    document.getElementById('newPollBtn').addEventListener('click', () => {
+      const next = `poll-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+      location.href = `${location.pathname}?poll=${next}`;
+    });
+
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      await navigator.clipboard.writeText(location.href);
+      setStatus('連結已複製');
+    });
+
+    setInterval(() => {
+      if (!poll) return;
+      timerText.textContent = formatTimer();
+      if (isClosed()) {
+        pollState.textContent = '投票已關閉';
+        timerText.classList.add('closed');
+      }
+    }, 1000);
+
+    setInterval(loadPoll, 3500);
+    loadPoll();
+  </script>
+</body>
+</html>
