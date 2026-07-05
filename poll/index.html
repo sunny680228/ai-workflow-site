@@ -545,6 +545,8 @@
 
     let poll = null;
     let saving = false;
+    let hostDirty = false;
+    let lastHostEditAt = 0;
 
     const syncStatus = document.getElementById('syncStatus');
     const questionText = document.getElementById('questionText');
@@ -561,6 +563,11 @@
 
     function setStatus(text) {
       syncStatus.textContent = text;
+    }
+
+    function markHostDirty() {
+      hostDirty = true;
+      lastHostEditAt = Date.now();
     }
 
     function uid(prefix) {
@@ -604,6 +611,11 @@
     }
 
     async function loadPoll() {
+      if (hostDirty) {
+        setStatus('編輯中，暫停覆蓋');
+        return;
+      }
+
       try {
         const data = await api(`?id=${encodeURIComponent(pollId)}`);
         poll = data.poll || makeDefaultPoll();
@@ -626,6 +638,7 @@
           body: JSON.stringify(poll)
         });
         poll = data.poll;
+        hostDirty = false;
         if (showStatus) setStatus(data.storage === 'vercel-kv' ? '已同步' : '本機暫存');
         render();
       } catch (error) {
@@ -720,6 +733,7 @@
         const card = document.createElement('button');
         card.type = 'button';
         card.className = 'vote-card';
+        card.dataset.optionId = option.id;
         card.setAttribute('aria-disabled', closed ? 'true' : 'false');
         card.classList.toggle('voted', selected === option.id);
         card.innerHTML = `
@@ -740,6 +754,7 @@
         const percent = total ? Math.round((option.votes / total) * 100) : 0;
         const row = document.createElement('div');
         row.className = 'result-row';
+        row.dataset.optionId = option.id;
         row.innerHTML = `
           <span class="result-icon" style="background:${option.color}33">${option.icon}</span>
           <div>
@@ -785,27 +800,64 @@
       return escapeHtml(value).replace(/"/g, '&quot;');
     }
 
+    function syncEditorsToPoll() {
+      poll.title = pollTitle.value.trim() || '即時投票';
+      poll.question = questionInput.value.trim() || '你想投給哪一個選項？';
+
+      optionEditors.querySelectorAll('input[data-id]').forEach((input) => {
+        const option = poll.options.find((item) => item.id === input.dataset.id);
+        if (!option) return;
+        if (input.dataset.role === 'icon') option.icon = input.value.trim() || '⭐';
+        if (input.dataset.role === 'text') option.text = input.value.trim() || '未命名選項';
+      });
+    }
+
+    function refreshOptionDisplay(option) {
+      const card = optionsGrid.querySelector(`[data-option-id="${CSS.escape(option.id)}"]`);
+      if (card) {
+        card.querySelector('.icon-badge').textContent = option.icon;
+        card.querySelector('.option-text').textContent = option.text;
+      }
+
+      const row = results.querySelector(`[data-option-id="${CSS.escape(option.id)}"]`);
+      if (row) {
+        row.querySelector('.result-icon').textContent = option.icon;
+        row.querySelector('.result-label span:first-child').textContent = option.text;
+      }
+    }
+
+    pollTitle.addEventListener('input', () => {
+      markHostDirty();
+      poll.title = pollTitle.value.trim() || '即時投票';
+    });
+
+    questionInput.addEventListener('input', () => {
+      markHostDirty();
+      poll.question = questionInput.value.trim() || '你想投給哪一個選項？';
+      questionText.textContent = poll.question;
+    });
+
     optionEditors.addEventListener('input', (event) => {
       const id = event.target.dataset.id;
       const role = event.target.dataset.role;
       const option = poll.options.find((item) => item.id === id);
       if (!option) return;
-      option[role] = event.target.value;
+      markHostDirty();
+      if (role === 'icon') option.icon = event.target.value.trim() || '⭐';
+      if (role === 'text') option.text = event.target.value.trim() || '未命名選項';
       renderResults(totalVotes());
-      optionsGrid.querySelectorAll('.vote-card').forEach((node, index) => {
-        const item = poll.options[index];
-        node.querySelector('.icon-badge').textContent = item.icon;
-        node.querySelector('.option-text').textContent = item.text;
-      });
+      refreshOptionDisplay(option);
     });
 
     optionEditors.addEventListener('click', (event) => {
       if (event.target.dataset.role !== 'remove') return;
+      markHostDirty();
       poll.options = poll.options.filter((option) => option.id !== event.target.dataset.id);
       render();
     });
 
     document.getElementById('addOptionBtn').addEventListener('click', () => {
+      markHostDirty();
       const index = poll.options.length;
       poll.options.push({
         id: uid('opt'),
@@ -818,10 +870,10 @@
       renderOptionEditors(true);
     });
 
-    document.getElementById('saveBtn').addEventListener('click', () => {
-      poll.title = pollTitle.value.trim() || '即時投票';
-      poll.question = questionInput.value.trim() || '你想投給哪一個選項？';
-      savePoll();
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      syncEditorsToPoll();
+      render();
+      await savePoll();
     });
 
     document.getElementById('setTimeBtn').addEventListener('click', async () => {
