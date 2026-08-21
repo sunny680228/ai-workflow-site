@@ -279,6 +279,58 @@
       outline-offset: 2px;
     }
 
+    .prompt-card {
+      display: grid;
+      gap: 16px;
+      margin: 0 0 24px;
+      padding: 22px;
+      border-radius: 8px;
+      border: 1px solid rgba(140, 157, 131, .34);
+      background: rgba(255, 253, 248, .92);
+      box-shadow: 0 12px 28px rgba(52, 49, 58, .09);
+    }
+
+    .prompt-card h3 {
+      margin: 0;
+      color: var(--lavender-deep);
+      font-size: 26px;
+      line-height: 1.35;
+    }
+
+    .prompt-copy {
+      justify-self: start;
+      min-height: 52px;
+      padding: 10px 18px;
+      border: 1px solid rgba(140, 157, 131, .32);
+      border-radius: 8px;
+      color: #ffffff;
+      background: #8c9d83;
+      font: inherit;
+      font-size: 22px;
+      cursor: pointer;
+      transition: transform .18s ease, background-color .18s ease;
+    }
+
+    .prompt-copy:hover,
+    .prompt-copy:focus-visible {
+      transform: translateY(-2px);
+      outline: 3px solid rgba(159, 178, 191, .45);
+      outline-offset: 2px;
+    }
+
+    .prompt-text {
+      margin: 0;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(52, 49, 58, .12);
+      color: var(--ink);
+      background: rgba(247, 243, 238, .74);
+      font-family: "Microsoft JhengHei", "Noto Sans TC", "PingFang TC", sans-serif;
+      font-size: 22px;
+      line-height: 1.7;
+      white-space: pre-wrap;
+    }
+
     .footer-note {
       margin-top: 18px;
       color: var(--muted);
@@ -454,6 +506,11 @@
           <a class="link-button" href="https://52hal.cc/SUNNYiiwcn" target="_blank" rel="noopener noreferrer">佳釧老師的備課小幫手</a>
           <a class="link-button" href="https://52hal.cc/SUNNY8etdg" target="_blank" rel="noopener noreferrer">佳釧老師的出題小幫手</a>
         </div>
+        <div class="prompt-card" aria-label="出題小幫手提示詞">
+          <h3>出題小幫手提示詞</h3>
+          <button class="prompt-copy" type="button" data-copy-target="quiz-helper-prompt">一鍵複製提示詞</button>
+          <p class="prompt-text" id="quiz-helper-prompt">以附檔的範圍出成一張國小三年級定期評量卷，參考考試重點檔案，要有第一大題國字注音，共二十格20分，第二大意選擇，包含字形、字音、文意、修辭共二十題，共40分，文意測驗避免考記憶類型，以理解推論為主，第三大題造句三題，照樣造句二題，一題四分，共20分，第四大題標點符號5分，再一篇台灣黑熊的說明文閱讀測驗500字，仿照台灣的山椒魚這一課考出標題和說明文特點，五題閱讀測驗，加1題寫作任務，共15分。每課平均配分，題目的出題原則和長度請參考機器人裡的資料，選擇題的選項要用1.2.3.4。</p>
+        </div>
         <div class="slide-grid">
           <figure>
             <img src="assets/投影片13.JPG" alt="GEM 管理工具">
@@ -525,6 +582,34 @@
         if (event.key === 'End') nextIndex = tabs.length - 1;
         tabs[nextIndex].focus();
         activateTab(tabs[nextIndex]);
+      });
+    });
+
+    document.querySelectorAll('[data-copy-target]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        const target = document.getElementById(button.dataset.copyTarget);
+        const text = target ? target.textContent.trim() : '';
+        if (!text) return;
+
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (error) {
+          const textArea = document.createElement('textarea');
+          textArea.value = text;
+          textArea.setAttribute('readonly', '');
+          textArea.style.position = 'fixed';
+          textArea.style.left = '-9999px';
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+        }
+
+        const originalText = button.textContent;
+        button.textContent = '已複製';
+        window.setTimeout(() => {
+          button.textContent = originalText;
+        }, 1800);
       });
     });
   </script>
