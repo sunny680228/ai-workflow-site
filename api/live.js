@@ -24,6 +24,7 @@ if ARGV[1]=='switch' then
   return 200
 end
 if mode=='closed' or redis.call('HGET',k,'round')~=ARGV[2] then return 409 end
+if ARGV[1]=='customMood' and mode~='mood' then return 409 end
 if mode=='chat' then
   local messages=cjson.decode(redis.call('HGET',k,'messages'))
   table.insert(messages,{id=ARGV[5],text=ARGV[3]})
@@ -31,10 +32,17 @@ if mode=='chat' then
   redis.call('HSET',k,'messages',cjson.encode(messages))
 else
   local n=tonumber(ARGV[3])
-  if not n or n~=math.floor(n) or n<1 or n>4 then return 400 end
+  if ARGV[1]=='customMood' then n=5
+  elseif not n or n~=math.floor(n) or n<1 or n>4 then return 400 end
   if redis.call('HSETNX',k,'v:'..ARGV[2]..':'..ARGV[4],1)==0 then return 200 end
   local counts=cjson.decode(redis.call('HGET',k,'counts'))
-  counts[n]=counts[n]+1
+  counts[n]=(counts[n] or 0)+1
+  if n==5 then
+    local messages=cjson.decode(redis.call('HGET',k,'messages'))
+    table.insert(messages,{id=ARGV[5],text=ARGV[3]})
+    if #messages>30 then table.remove(messages,1) end
+    redis.call('HSET',k,'messages',cjson.encode(messages))
+  end
   redis.call('HSET',k,'counts',cjson.encode(counts))
 end
 return 200`;
@@ -59,8 +67,8 @@ module.exports = async (req,res) => {
     if (req.method!=='POST') return res.status(405).json({});
     let args;
     if (b.action==='switch' && modes.includes(b.mode)) args=['switch',String(b.owner),b.mode];
-    else if (b.action==='reply' && uuid.test(b.client) && typeof b.value==='string' && b.value.trim() && b.value.length<=120)
-      args=['reply',String(b.round),b.value.trim(),b.client,randomUUID()];
+    else if (['reply','customMood'].includes(b.action) && uuid.test(b.client) && typeof b.value==='string' && b.value.trim() && b.value.length<=120)
+      args=[b.action,String(b.round),b.value.trim(),b.client,randomUUID()];
     else return res.status(400).json({});
     const code=await redis('EVAL',update,1,key,...args);
     res.status(code).json({ok:code===200});
