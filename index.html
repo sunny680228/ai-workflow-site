@@ -369,6 +369,12 @@
         grid-column: auto;
       }
     }
+    #web-builder iframe { display: block; width: 100%; height: 70vh; border: 1px solid var(--line); border-radius: 8px; box-sizing: border-box; }
+    .builder-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .builder-tools h3 { margin-right: auto; }
+    #web-builder.expanded { position: fixed; inset: 0; z-index: 100; background: var(--surface); padding: 12px; display: flex; flex-direction: column; }
+    #web-builder.expanded iframe { flex: 1; min-height: 0; }
+    body:has(#web-builder.expanded) { overflow: hidden; }
   </style>
 </head>
 <body>
@@ -672,6 +678,14 @@
             <figcaption>先在 Gemini 中重新撰寫指令，再用 NotebookLM 訓練，最後補上相關資料來源。</figcaption>
           </figure>
         </div>
+        <section id="web-builder" aria-labelledby="builder-title">
+          <div class="builder-tools">
+            <h3 id="builder-title">打造網頁</h3>
+            <button class="tab-button" id="builder-size" type="button" aria-expanded="false" aria-controls="builder-frame">放大檢視</button>
+            <a href="https://sunny680228.github.io/Interactive-Web-new/" target="_blank" rel="noopener noreferrer">在新分頁開啟</a>
+          </div>
+          <iframe id="builder-frame" title="打造網頁互動網站" src="https://sunny680228.github.io/Interactive-Web-new/" loading="lazy"></iframe>
+        </section>
       </section>
 
       <section class="panel" id="panel-judge" role="tabpanel" aria-labelledby="tab-judge">
@@ -704,6 +718,18 @@
   </div>
 
   <script>
+    const builder = document.getElementById('web-builder');
+    const sizeButton = document.getElementById('builder-size');
+    function expandBuilder(expanded) {
+      builder.classList.toggle('expanded', expanded);
+      sizeButton.setAttribute('aria-expanded', String(expanded));
+      sizeButton.textContent = expanded ? '返回原大小' : '放大檢視';
+      sizeButton.focus({ preventScroll: true });
+    }
+    sizeButton.addEventListener('click', () => expandBuilder(!builder.classList.contains('expanded')));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && builder.classList.contains('expanded')) expandBuilder(false);
+    });
     const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
     const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
 
