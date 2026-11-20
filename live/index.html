@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>現場互動｜陳佳釧老師</title>
+<style>
+*{box-sizing:border-box}body{font:20px/1.6 system-ui,sans-serif;color:#35343c;background:#f7f6f2;margin:0}main{max-width:960px;padding:24px;margin:auto}h1{font-size:32px}h2{font-size:26px}button,input{font:inherit;padding:10px 15px;border:1px solid #928c9c;border-radius:6px;background:white;color:inherit}button{cursor:pointer}button[aria-pressed=true],#create{background:#625578;color:white}button:disabled{opacity:.6}nav,.row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}input{max-width:100%;flex:1;min-width:10ch}#qr{width:150px;height:150px;display:block}#join{overflow-wrap:anywhere}#stage{background:#fff;border-block:2px solid #a3af9c;padding:16px;position:relative;overflow:hidden;min-height:180px}#stage p{margin:5px 0}meter{width:45%;margin-inline:12px}#flight{pointer-events:none;position:absolute;inset:0;overflow:hidden}.fly{position:absolute;left:100%;white-space:nowrap;background:#e9e3f1;color:#433650;padding:3px 12px;border-radius:6px;animation:travel 7s linear forwards}@keyframes travel{to{transform:translateX(calc(-100vw - 100%))}}@media(prefers-reduced-motion:reduce){#flight{display:none}}[hidden]{display:none!important}
+</style><main><h1>現場互動</h1><button id="create">開一場新課</button>
+<section id="host" hidden><details open><summary>學員加入</summary><img id="qr" alt="學員加入 QR Code"><a id="join"></a></details>
+<h2>開始一輪互動</h2><nav id="modes"></nav></section>
+<section id="room" hidden><h2 id="title"></h2><div id="stage"><div id="results"></div><div id="flight"></div></div><form id="entry" class="row" hidden><input id="message" aria-label="彈幕留言" placeholder="寫下一句話" maxlength="120" required><button>送出留言</button></form><div id="choices" class="row"></div></section>
+<p id="status" role="status"></p></main><script>
+const el=id=>document.getElementById(id);
+const names={chat:'彈幕留言',mood:'心情回饋',vote:'數字投票',closed:'結束互動'};
+const moods=['跟得上','想再聽一次','需要幫忙','準備好了'];
+const url=new URL(location.href);
+let id=url.searchParams.get('room'),state,seen=new Set(),busy=false,refreshing=false;
+const client=localStorage.liveClient ||= crypto.randomUUID();
+function owner(){return sessionStorage.getItem('host:'+id)}
+async function api(body){
+ const r=await fetch('/api/live'+(id?'?id='+encodeURIComponent(id):''),body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{cache:'no-store'});
+ if(!r.ok)throw Error(({404:'房間已到期，請向講師索取本堂課的連結。',409:'講師已切換活動，請依新題目作答。'})[r.status]||'連線失敗，請稍後再試。');
+ return r.json();
+}
+function button(parent,label,click){const b=document.createElement('button');b.textContent=label;b.onclick=click;parent.append(b);return b}
+async function send(value){
+ if(busy||!state)return;
+ busy=true;const round=state.round;
+ try{await api({action:'reply',client,round,value});if(state.round===round){if(state.mode==='chat')el('message').value='';else localStorage.setItem(id+':'+round,'1');el('status').textContent='已送出';render(state)}}
+ catch(e){el('status').textContent=e.message}finally{busy=false;refresh()}
+}
+function render(s){
+ const changed=state?.round!==s.round;
+ if(changed){seen.clear();el('flight').replaceChildren();el('message').value='';el('status').textContent=''}
+ state=s;el('room').hidden=false;el('title').textContent=names[s.mode];el('choices').replaceChildren();
+ el('entry').hidden=!!owner()||s.mode!=='chat';el('results').replaceChildren();
+ if(owner())for(const b of el('modes').children)b.setAttribute('aria-pressed',b.dataset.mode===s.mode);
+ if(s.mode==='closed'){el('results').textContent='本輪互動已結束。';return}
+ if(s.mode==='chat'){
+  if(!s.messages.length)el('results').textContent='等待第一則留言…';
+  for(const m of s.messages.slice(-5)){const p=document.createElement('p');p.textContent=m.text;el('results').append(p)}
+  if(owner())for(const m of s.messages.filter(m=>!seen.has(m.id)).slice(-4)){const f=document.createElement('span');f.className='fly';f.textContent=m.text;f.style.top=(el('flight').childElementCount%4)*23+'%';el('flight').append(f);setTimeout(()=>f.remove(),7200)}
+  seen=new Set(s.messages.map(m=>m.id));return
+ }
+ const labels=s.mode==='vote'?['1','2','3','4']:moods,total=s.counts.reduce((a,b)=>a+b,0);
+ labels.forEach((label,i)=>{const p=document.createElement('p'),meter=document.createElement('meter');meter.max=Math.max(total,1);meter.value=s.counts[i];meter.setAttribute('aria-label',label);p.append(label,meter,s.counts[i]+' 票（'+(total?Math.round(s.counts[i]*100/total):0)+'％）');el('results').append(p);
+ if(!owner())button(el('choices'),label,()=>send(String(i+1))).disabled=!!localStorage.getItem(id+':'+s.round)});
+}
+async function refresh(){if(refreshing)return;refreshing=true;try{const s=await api();if(!state||s.round>=state.round)render(s);if(el('status').dataset.offline){el('status').textContent='';delete el('status').dataset.offline}}catch(e){el('status').textContent=e.message;el('status').dataset.offline='1'}finally{refreshing=false}}
+el('entry').onsubmit=e=>{e.preventDefault();if(el('message').value.trim())send(el('message').value.trim())};
+el('create').onclick=async()=>{el('create').disabled=true;try{const r=await api({action:'create'});sessionStorage.setItem('host:'+r.id,r.owner);url.searchParams.set('room',r.id);location.assign(url)}catch(e){el('create').disabled=false;el('status').textContent=e.message}};
+if(id){el('create').hidden=!owner();if(owner()){
+ el('host').hidden=false;el('join').textContent=url.href;el('join').href=url.href;el('qr').src='https://api.qrserver.com/v1/create-qr-code/?size=240x240&data='+encodeURIComponent(url.href);
+ for(const [mode,label] of Object.entries(names)){const b=button(el('modes'),label,async()=>{if(busy)return;busy=true;try{await api({action:'switch',owner:owner(),mode});await refresh()}catch(e){el('status').textContent=e.message}finally{busy=false}});b.dataset.mode=mode}
+ }refresh();setInterval(refresh,2500)}
+</script></html>
