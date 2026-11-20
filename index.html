@@ -395,7 +395,7 @@
       <button class="tab-button" id="tab-cycle" role="tab" aria-selected="false" aria-controls="panel-cycle">備教評流程</button>
       <button class="tab-button" id="tab-gemini" role="tab" aria-selected="false" aria-controls="panel-gemini">Gemini 備課</button>
       <button class="tab-button" id="tab-notebook" role="tab" aria-selected="false" aria-controls="panel-notebook">NotebookLM</button>
-      <button class="tab-button" id="tab-gem" role="tab" aria-selected="false" aria-controls="panel-gem">GEM 小幫手</button>
+      <button class="tab-button" id="tab-gem" role="tab" aria-selected="false" aria-controls="panel-gem">GEM/SKILL</button>
       <button class="tab-button" id="tab-builder" role="tab" aria-selected="false" aria-controls="panel-builder">打造網頁</button>
       <button class="tab-button" id="tab-judge" role="tab" aria-selected="false" aria-controls="panel-judge">AI 判斷力</button>
       <button class="tab-button" id="tab-close" role="tab" aria-selected="false" aria-controls="panel-close">結語</button>
@@ -679,6 +679,20 @@
             <figcaption>先在 Gemini 中重新撰寫指令，再用 NotebookLM 訓練，最後補上相關資料來源。</figcaption>
           </figure>
         </div>
+        <h3>在 Gemini 設定自己的技能（Skill）</h3>
+        <p>如果每一課都要設計閱讀提問，可以把固定的出題步驟存成技能。下次換一篇課文，就能沿用同一套提問方式。</p>
+        <ol>
+          <li><strong>建立。</strong>登入 <a href="https://gemini.google.com/" target="_blank" rel="noopener noreferrer">Gemini 網頁版</a>，開啟新對話，貼上下方的建立指令並送出。</li>
+          <li><strong>確認。</strong>開啟「自訂」中的「技能」，找到「三年級閱讀提問」，核對名稱、用途與指令，確認技能已啟用。</li>
+          <li><strong>試用。</strong>另開對話，貼上一段課文，輸入「請使用三年級閱讀提問技能，為這段課文設計問題」。核對三道題目與引用的原句。</li>
+          <li><strong>微調。</strong>若推論題太難，回到技能編輯指令，加上「先請學生圈出人物的動作，再推測心情」，儲存後用同一段課文再試一次。</li>
+        </ol>
+        <div class="prompt-card">
+          <h4>建立指令｜三年級閱讀提問</h4>
+          <button type="button" class="prompt-copy" data-copy-target="gemini-reading-skill">複製建立指令</button>
+          <p class="prompt-text" id="gemini-reading-skill">請幫我建立一個名為「三年級閱讀提問」的技能。當我提供課文並請你設計閱讀提問時，請依序設計三題：找出明確訊息、根據線索推論、連結生活經驗。每題用三年級學生能理解的語句，並列出「提問、課文線索、參考回答」。課文線索請引用原句。若我還沒提供課文，先請我貼上文本。</p>
+        </div>
+        <p><a href="https://support.google.com/gemini/answer/17094296?hl=zh-Hant&amp;co=GENIE.Platform%3DDesktop" target="_blank" rel="noopener noreferrer">Google 官方說明：建立及管理 Gemini 技能</a></p>
       </section>
 
       <section class="panel" id="panel-builder" role="tabpanel" aria-labelledby="tab-builder">
