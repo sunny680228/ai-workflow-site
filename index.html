@@ -396,6 +396,7 @@
       <button class="tab-button" id="tab-gemini" role="tab" aria-selected="false" aria-controls="panel-gemini">Gemini 備課</button>
       <button class="tab-button" id="tab-notebook" role="tab" aria-selected="false" aria-controls="panel-notebook">NotebookLM</button>
       <button class="tab-button" id="tab-gem" role="tab" aria-selected="false" aria-controls="panel-gem">GEM 小幫手</button>
+      <button class="tab-button" id="tab-builder" role="tab" aria-selected="false" aria-controls="panel-builder">打造網頁</button>
       <button class="tab-button" id="tab-judge" role="tab" aria-selected="false" aria-controls="panel-judge">AI 判斷力</button>
       <button class="tab-button" id="tab-close" role="tab" aria-selected="false" aria-controls="panel-close">結語</button>
     </nav>
@@ -678,14 +679,17 @@
             <figcaption>先在 Gemini 中重新撰寫指令，再用 NotebookLM 訓練，最後補上相關資料來源。</figcaption>
           </figure>
         </div>
-        <section id="web-builder" aria-labelledby="builder-title">
+      </section>
+
+      <section class="panel" id="panel-builder" role="tabpanel" aria-labelledby="tab-builder">
+        <div id="web-builder">
           <div class="builder-tools">
             <h3 id="builder-title">打造網頁</h3>
             <button class="tab-button" id="builder-size" type="button" aria-expanded="false" aria-controls="builder-frame">放大檢視</button>
             <a href="https://sunny680228.github.io/Interactive-Web-new/" target="_blank" rel="noopener noreferrer">在新分頁開啟</a>
           </div>
           <iframe id="builder-frame" title="打造網頁互動網站" src="https://sunny680228.github.io/Interactive-Web-new/" loading="lazy"></iframe>
-        </section>
+        </div>
       </section>
 
       <section class="panel" id="panel-judge" role="tabpanel" aria-labelledby="tab-judge">
