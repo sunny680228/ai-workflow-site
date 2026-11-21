@@ -814,5 +814,25 @@
       });
     });
   </script>
+  <link rel="stylesheet" href="classroom-tools.css">
+  <svg id="class-ink" aria-hidden="true"></svg>
+  <details class="class-tool" id="class-pens">
+    <summary title="展開或收合畫記工具">✎ 畫記</summary>
+    <div class="class-row">
+      <button type="button" data-mode="pen" aria-pressed="true">畫筆</button>
+      <button type="button" data-mode="erase" aria-pressed="false">擦布</button>
+      <input type="color" id="class-color" value="#ac585a" aria-label="畫筆顏色" title="畫筆顏色">
+      <button type="button" id="class-clear" title="清除所有分頁的畫記">清除全部</button>
+    </div>
+  </details>
+  <details class="class-tool" id="class-clock">
+    <summary title="展開或收合倒數計時器">◷ <span id="class-mini">計時</span></summary>
+    <section id="class-face" aria-label="倒數計時器">
+      <div id="class-ring"><strong role="timer" id="class-time">03:00</strong></div>
+      <div class="class-row"><label><input id="class-min" type="number" min="0" max="999" value="3"> 分</label><label><input id="class-sec" type="number" min="0" max="59" value="0"> 秒</label></div>
+      <div class="class-row"><button id="class-start">開始</button><button id="class-reset">重設</button><button id="class-full" aria-label="全螢幕計時" title="全螢幕計時">⛶</button></div>
+    </section>
+  </details>
+  <script src="classroom-tools.js"></script>
 </body>
 </html>
