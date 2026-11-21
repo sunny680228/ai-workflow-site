@@ -5,20 +5,32 @@
   const pageFull = document.getElementById('page-full');
   const currentFull = () => document.fullscreenElement || document.webkitFullscreenElement;
   function updatePageFull() {
-    const label = currentFull() === root ? '退出網頁全螢幕' : '網頁全螢幕';
+    const label = currentFull() === root ? '退出網頁全螢幕' : root.classList.contains('page-focus') ? '退出專心模式' : '網頁全螢幕';
     document.getElementById('page-full-label').textContent = label;
     pageFull.title = label;
   }
   pageFull.onclick = async () => {
+    if (root.classList.contains('page-focus')) {
+      root.classList.remove('page-focus');
+      updatePageFull();
+      return;
+    }
     try {
       if (currentFull() === root) await (document.exitFullscreen || document.webkitExitFullscreen).call(document);
       else await (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
     } catch {
-      window.alert('這個瀏覽器目前無法開啟網頁全螢幕。電腦版可從瀏覽器選單選擇「全螢幕」。');
+      if (!currentFull()) root.classList.add('page-focus');
+      updatePageFull();
     }
   };
   document.addEventListener('fullscreenchange', updatePageFull);
   document.addEventListener('webkitfullscreenchange', updatePageFull);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !currentFull() && !face.classList.contains('large')) {
+      root.classList.remove('page-focus');
+      updatePageFull();
+    }
+  });
   let mode = 'pen', stroke = null;
   el('clear').onclick = () => {
     stroke = null;

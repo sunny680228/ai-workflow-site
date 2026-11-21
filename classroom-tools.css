@@ -19,3 +19,7 @@
 #class-face.large #class-ring {width:min(74vmin,680px)}
 #class-face.large #class-time {font-size:clamp(36px,7rem,112px)}
 @media(max-width:580px){#class-pens[open] {bottom:64px}}
+#page-full {position:relative;z-index:71;cursor:pointer}
+html.page-focus .site-shell {width:calc(100% - 24px);padding-top:8px}
+html.page-focus header {padding:8px 12px}
+html.page-focus header :is(h1,.subtitle,.header-link:not(#page-full)) {display:none}
