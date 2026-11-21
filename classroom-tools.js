@@ -1,6 +1,24 @@
 (() => {
   const el = id => document.getElementById('class-' + id);
   const ink = el('ink'), pens = el('pens'), clock = el('clock'), face = el('face');
+  const root = document.documentElement;
+  const pageFull = document.getElementById('page-full');
+  const currentFull = () => document.fullscreenElement || document.webkitFullscreenElement;
+  function updatePageFull() {
+    const label = currentFull() === root ? '退出網頁全螢幕' : '網頁全螢幕';
+    document.getElementById('page-full-label').textContent = label;
+    pageFull.title = label;
+  }
+  pageFull.onclick = async () => {
+    try {
+      if (currentFull() === root) await (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      else await (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
+    } catch {
+      window.alert('這個瀏覽器目前無法開啟網頁全螢幕。電腦版可從瀏覽器選單選擇「全螢幕」。');
+    }
+  };
+  document.addEventListener('fullscreenchange', updatePageFull);
+  document.addEventListener('webkitfullscreenchange', updatePageFull);
   let mode = 'pen', stroke = null;
   el('clear').onclick = () => {
     stroke = null;
